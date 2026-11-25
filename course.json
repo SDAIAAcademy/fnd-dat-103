@@ -194,40 +194,40 @@
           "lab": {
             "id": "2.1",
             "title": "Every record, exactly once",
-            "summary": "A client for the mock charge-point platform API that follows cursors, retries with backoff, keeps raw pages and resumes from a checkpoint, then a polite pull of a public open-data API",
+            "summary": "A client for the mock platform API that follows cursors, retries, keeps raw pages and resumes, then a polite public pull",
             "minutes": 100,
             "href": "D2_1_api_client.ipynb",
             "steps": [
               {
-                "text": "Run the setup cell, read the API’s terms and load the token from the environment",
+                "text": "Read the API’s terms; load the token from the environment",
                 "minutes": 10
               },
               {
-                "text": "Fetch one page by hand: status, body and cursor",
+                "text": "Fetch one page by hand",
                 "minutes": 10
               },
               {
-                "text": "Write fetch_all: follow the cursor, keep raw pages, checkpoint",
+                "text": "Write fetch_all: cursor, raw pages, checkpoint",
                 "minutes": 25
               },
               {
-                "text": "Add retries: Retry-After on 429, backoff with jitter on 5xx, stop on other errors",
+                "text": "Add retries for 429 and 5xx; stop on other errors",
                 "minutes": 20
               },
               {
-                "text": "Interrupt the run, resume it, and prove every record arrived exactly once",
+                "text": "Interrupt, resume, prove exactly once",
                 "minutes": 10
               },
               {
-                "text": "Page the offset endpoint and find what it repeats and misses",
+                "text": "Find what offset paging repeats and misses",
                 "minutes": 10
               },
               {
-                "text": "Read a public open-data API’s licence, then pull every page politely",
+                "text": "Read a public API’s licence, then pull every page politely",
                 "minutes": 15
               }
             ],
-            "stretch": "Make the public pull resumable with the same checkpoint idea"
+            "stretch": "Make the public pull resumable"
           }
         },
         {
@@ -246,20 +246,20 @@
           "lab": {
             "id": "2.2",
             "title": "Flatten, write, validate",
-            "summary": "Raw API pages turned into typed session and reading tables written as Parquet partitioned by day, then five batches validated with JSON Schema and Pandera: loaded, quarantined or rejected",
+            "summary": "Raw API pages flattened to typed tables, written as day-partitioned Parquet, then five batches loaded, quarantined or rejected",
             "minutes": 90,
             "href": "D2_2_flatten_validate.ipynb",
             "steps": [
               {
-                "text": "Run the setup cell; check every raw record against the JSON Schema",
+                "text": "Check every raw record against the JSON Schema",
                 "minutes": 15
               },
               {
-                "text": "Flatten the records into a sessions table and a readings table",
+                "text": "Flatten into sessions and readings tables",
                 "minutes": 20
               },
               {
-                "text": "Cast to the declared schema, write Parquet partitioned by day, check what was written",
+                "text": "Write day-partitioned Parquet with the declared schema; check it",
                 "minutes": 15
               },
               {
@@ -267,15 +267,15 @@
                 "minutes": 15
               },
               {
-                "text": "Validate the five batches: load, quarantine or reject, and write the report",
+                "text": "Validate five batches and write the report",
                 "minutes": 20
               },
               {
-                "text": "Read the quarantine file as a station owner would",
+                "text": "Read the quarantine file as its owner",
                 "minutes": 5
               }
             ],
-            "stretch": "Add an optional field to the schema (version 2) and show that version-1 batches still pass"
+            "stretch": "Add an optional field (schema version 2) without breaking version 1"
           }
         }
       ]

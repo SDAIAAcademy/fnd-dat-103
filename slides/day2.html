@@ -1,157 +1,385 @@
 <section class="slide title" id="title" data-auto="title">
-  <aside class="notes">REPLACE: welcome; introduce yourself; one question to the room that calibrates the pace; the rhythm of the day</aside>
+  <aside class="notes"><p>Day 2 moves from files to interfaces and to the boundary where data enters the tables. Two long sessions, then the capstone brief and the supervised check (60 minutes, without assistants). Check that everyone copied labs/.env.example to labs/.env.</p></aside>
 </section>
 
 <section class="slide" id="agenda" data-auto="agenda"></section>
+
+<section class="slide" id="review-day1" data-lo="LO1 LO2">
+  <div class="kicker">Review of Day 1</div>
+  <h2>Which fault is this?</h2>
+  <div class="quiz" data-type="single" data-lo="LO2">
+    <p class="lead">A water utility's meter readings, logged without offsets, run exactly 240 minutes ahead of the billing system's UTC times on every day of the year. What is the fault?</p>
+    <div class="opts">
+      <div class="opt" data-why="Expects daylight saving to give a constant gap: its gap changes when the clocks change">A clock in a zone with daylight saving</div>
+      <div class="opt" data-why="Confuses text faults with time faults: an encoding changes characters, not hours">A file saved in a legacy code page</div>
+      <div class="opt" data-why="Assumes a format can shift values: CSV stores the text the device wrote">A CSV that lost the column's type</div>
+      <div class="opt" data-ok>A clock on a fixed offset, read as UTC</div>
+    </div>
+    <div class="callout tip why"><b>Why.</b> A gap that never changes is a fixed offset: localise every time to that offset and convert to UTC.</div>
+  </div>
+  <aside class="notes"><p>Answer: a fixed-offset clock read as UTC. If anyone picks daylight saving, ask what the gap would do on the day the clocks change. Two minutes, then session 3.</p></aside>
+</section>
 
 <!-- Session 1 -->
 
 <section class="slide section" id="s1" data-auto="section" data-session="1"></section>
 
-<section class="slide" id="s1-idea">
-  <div class="kicker">REPLACE: the question this slide answers</div>
-  <h2>REPLACE: one idea, stated as a sentence</h2>
-  <div class="cols cols-2">
-    <ul class="bullets">
-      <li>REPLACE: at most six bullets, each a complete thought</li>
-      <li>REPLACE: bold the key phrase; numbers come from the lab run, not from memory</li>
-    </ul>
-    <div class="card c-teal"><h4>In the case study</h4><p class="small mb0">REPLACE: tie the idea to the case study and its data</p></div>
+<section class="slide" id="http-in-one" data-lo="LO3">
+  <div class="kicker">HTTP in one slide</div>
+  <h2>A request names what you want; the status says what happened</h2>
+  <div class="trace s">
+    <div class="ev user"><b>request</b><code>GET /v1/stations?limit=50&amp;cursor=Yz0x</code> with <code>Authorization: Bearer ...</code></div>
+    <div class="ev result"><b>status</b><code>200 OK</code></div>
+    <div class="ev result"><b>headers</b><code>Content-Type: application/json</code></div>
+    <div class="ev final"><b>body</b><code>{"data": [...50 items...], "next_cursor": "Yz01MA"}</code></div>
   </div>
-  <div class="callout warn mt"><b>What goes wrong.</b> REPLACE: the failure participants will hit, and how to recognise it</div>
-  <aside class="notes">REPLACE: what to say, the demo to run, the question to ask the room, the common failure and its fix</aside>
+  <p class="lead mt">Read the status before the body: a 429 or a 500 may carry an HTML page, not your JSON.</p>
+  <aside class="notes"><p>This is a generic example, not the lab's API. Ask what a client that calls .json() on every response does when the body is an HTML error page: it crashes far from the cause. Lab 2.1 shows exactly that with a plain client.</p><p>Sources: RFC 9110, HTTP semantics.</p></aside>
 </section>
 
-<section class="slide" id="s1-steps">
-  <div class="kicker">Step by step</div>
-  <h2>REPLACE: a process, shown one step per key press</h2>
-  <div class="flow">
-    <div class="step c-teal"><b>1 · REPLACE: name</b>REPLACE: what happens first</div>
-    <div class="arrow frag" data-frag="b">→</div><div class="step c-cyan frag" data-frag="b"><b>2 · REPLACE: name</b>REPLACE: the next piece</div>
-    <div class="arrow frag" data-frag="c">→</div><div class="step c-coral frag" data-frag="c"><b>3 · REPLACE: name</b>REPLACE: the result</div>
+<section class="slide" id="status-codes" data-lo="LO3">
+  <div class="kicker">Status codes</div>
+  <h2>Each status asks the client for a different action</h2>
+  <table class="t">
+    <tr><th>Status</th><th>Means</th><th>The client</th></tr>
+    <tr><td><code>200</code></td><td>Here is the data</td><td>Uses it</td></tr>
+    <tr><td><code>400</code> <code>401</code> <code>403</code> <code>404</code></td><td>The request is wrong or not allowed</td><td>Stops and reports: repeating will not help</td></tr>
+    <tr class="hl"><td><code>429</code></td><td>Too many requests</td><td>Waits as long as <code>Retry-After</code> says, then repeats</td></tr>
+    <tr><td><code>500</code> <code>502</code> <code>503</code> <code>504</code></td><td>The server failed, often briefly</td><td>Waits longer each time, then repeats; gives up after a few tries</td></tr>
+  </table>
+  <aside class="notes"><p>RFC 6585 defines 429 and says the response may include Retry-After, which RFC 9110 defines as seconds or a date. A 4xx other than 429 is about your request; retrying it adds load and can lock a token. Ask for one example from the room of a 404 that is not an error (a page past the end).</p><p>Sources: RFC 9110; RFC 6585, section 4.</p></aside>
+</section>
+
+<section class="slide" id="offset-vs-cursor" data-lo="LO3">
+  <div class="kicker">Pagination</div>
+  <h2>An offset is a position; a cursor is a bookmark</h2>
+  <div class="cols cols-2">
+    <div class="card c-coral"><h4>Offset: "skip 100, give me 100"</h4><p class="small mb0">Newest first, five new items arrive after page 1. Every older item moves down five places, so page 2 starts with five items you already have, and the five new ones are never seen in this pull.</p></div>
+    <div class="card c-teal"><h4>Cursor: "after the last one I saw"</h4><p class="small mb0">The server returns an opaque token naming the last item. New items at the top do not move what comes after it; the next run picks them up.</p></div>
   </div>
-  <div class="callout tip mt frag"><b>Takeaway.</b> REPLACE: the one sentence to remember</div>
-  <aside class="notes">Press once per step and say what each step adds before the next one appears. REPLACE: the example to walk through</aside>
+  <div class="callout warn mt"><b>What goes wrong.</b> Offset paging fails silently: no error, just repeats and gaps that a count by id would reveal.</div>
+  <aside class="notes"><p>Draw it on the board with a list of ten numbered items and a page size of three. Insert two at the top after the first page and let the room find the repeats. Offset paging is fine for a list that does not change while you read it; most live lists change.</p></aside>
+</section>
+
+<section class="slide" id="backoff" data-lo="LO3">
+  <div class="kicker">Retries</div>
+  <h2>Back off exponentially, add jitter, and stop after a few tries</h2>
+  <div class="cols cols-2">
+    <div class="bars">
+      <div class="row"><span>Try 1</span><div class="bar c-teal" style="--w:6%"></div><span class="val">0.5 s</span></div>
+      <div class="row"><span>Try 2</span><div class="bar c-teal" style="--w:12%"></div><span class="val">1 s</span></div>
+      <div class="row"><span>Try 3</span><div class="bar c-cyan" style="--w:25%"></div><span class="val">2 s</span></div>
+      <div class="row"><span>Try 4</span><div class="bar c-cyan" style="--w:50%"></div><span class="val">4 s</span></div>
+      <div class="row"><span>Try 5</span><div class="bar c-coral" style="--w:100%"></div><span class="val">8 s</span></div>
+    </div>
+    <ul class="bullets">
+      <li><b>Wait</b> = base × 2<sup>try − 1</sup>, capped, plus a small random jitter.</li>
+      <li>Jitter spreads clients that failed together, so they do not return together.</li>
+      <li>A 429 with <code>Retry-After</code> overrides the formula.</li>
+    </ul>
+  </div>
+  <aside class="notes"><p>The waits shown are the formula with a base of half a second, before jitter. In the lab the client calls sleep through a parameter: the notebook passes a fake clock that records waits instead of waiting, so a run with minutes of backoff takes seconds and the log shows every wait. That is also how you test retry code.</p></aside>
+</section>
+
+<section class="slide" id="keep-raw" data-lo="LO3">
+  <div class="kicker">Raw responses</div>
+  <h2>Keep every raw response before you parse it</h2>
+  <div class="cols cols-3">
+    <div class="card c-teal"><h4>Replay</h4><p class="small mb0">Fix a parsing bug and rerun from the saved pages, without calling the API again.</p></div>
+    <div class="card c-cyan"><h4>Audit</h4><p class="small mb0">Show what the source said on the day, not what your code made of it.</p></div>
+    <div class="card c-purple"><h4>Debug</h4><p class="small mb0">An odd value downstream can be traced to the page it came from.</p></div>
+  </div>
+  <div class="callout warn mt"><b>Never the headers.</b> Save the path, the parameters, the status and the body. The request headers carry the token.</div>
+  <aside class="notes"><p>Ask how long raw pages should be kept: the API's terms may say (the lab's mock says 30 days). Raw pages are also the starting state of lab 2.2: the course supplies a clean pull in labs/data/raw_api/ so nobody depends on finishing lab 2.1.</p></aside>
+</section>
+
+<section class="slide" id="rerunnable" data-lo="LO3">
+  <div class="kicker">Rerunnable loads</div>
+  <h2>Write records by key, then the checkpoint: a crash anywhere is safe</h2>
+  <div class="flow">
+    <div class="step c-teal"><b>1 · Fetch</b>the page after the saved cursor</div>
+    <div class="arrow">→</div>
+    <div class="step c-cyan"><b>2 · Save raw</b>the page as it came</div>
+    <div class="arrow">→</div>
+    <div class="step c-purple"><b>3 · Write by id</b>skip ids already kept</div>
+    <div class="arrow">→</div>
+    <div class="step c-amber"><b>4 · Checkpoint</b>the next cursor</div>
+  </div>
+  <ul class="bullets mt">
+    <li>A crash before step 4 means the page is fetched again; step 3 makes that harmless.</li>
+    <li>"Exactly once" is proven by counting: records equal unique ids equal the source's count.</li>
+  </ul>
+  <aside class="notes"><p>The worst moment to crash is after writing and before checkpointing: the lab stops the run exactly there. Idempotent means doing it twice has the same effect as once. Ask what would happen with an append-only write and no id check: duplicates on every resume.</p></aside>
+</section>
+
+<section class="slide" id="tokens-out" data-lo="LO3">
+  <div class="kicker">Tokens</div>
+  <h2>A token belongs to a person and the environment, never to the code</h2>
+  <div class="cols cols-2">
+    <pre class="code" data-file="client.py"><code class="language-python">import os
+
+token = os.environ["SOURCE_API_TOKEN"]   # set in the shell,
+# or read from .env, which .gitignore excludes
+client = httpx.Client(headers={"Authorization": f"Bearer {token}"})</code></pre>
+    <ul class="bullets">
+      <li>Commit <code>.env.example</code> with a placeholder value; never <code>.env</code>.</li>
+      <li>A token pasted in a notebook stays in its history and every copy.</li>
+      <li>Tokens are issued per person by the data's owner, who can revoke them.</li>
+    </ul>
+  </div>
+  <aside class="notes"><p>The course's mock token in .env.example is a course value that opens only the mock. Segregation of duties: the person who writes the client does not issue or hold the production token; the platform owner issues one per person and revokes it. The lab checks that no saved page or log line contains the token.</p></aside>
+</section>
+
+<section class="slide" id="terms-first" data-lo="LO3">
+  <div class="kicker">Respectful collection</div>
+  <h2>Read the terms and limits before the first request</h2>
+  <ul class="bullets">
+    <li><b>Rate limits:</b> stay under them; honour <code>429</code> and <code>Retry-After</code>.</li>
+    <li><b>Licence:</b> what you may keep, share and publish, and how to credit the source.</li>
+    <li><b>Retention:</b> how long raw responses may be kept.</li>
+    <li><b>No published limit</b> is not permission: set your own pace, write it in the code, and say it is yours.</li>
+  </ul>
+  <div class="callout tip mt"><b>In the lab.</b> The public API task reads the series' licence from its metadata and stops unless it is open; it then paces itself at one request a second, the course's own rule.</div>
+  <aside class="notes"><p>The public API of the lab, the World Bank Indicators API, needs no key, pages by number and records a licence per series; its datasets terms say CC BY 4.0 unless labelled otherwise. It publishes no rate limit, so one request a second is the course's rule, not the provider's. Nothing it returns is stored in the course.</p><p>Sources: World Bank, API basic call structures; World Bank terms of use for datasets.</p></aside>
+</section>
+
+<section class="slide" id="open-data-policy" data-lo="LO3">
+  <div class="kicker">National reference</div>
+  <h2>The Open Data Policy asks for machine-readable formats and a licence</h2>
+  <div class="cols cols-2">
+    <div class="card c-teal"><h4>Principle 2 · Open Format and Machine-Readable</h4><p class="small mb0">«المبدأ الثاني: الصيغة المفتوحة وإمكانية القراءة آلياً»: data is made available in a machine-readable format that allows automated processing, in widely used file formats such as CSV, XLS, JSON and XML.</p></div>
+    <div class="card c-cyan"><h4>Principle 7 · Open Data Licensing</h4><p class="small mb0">«المبدأ السابع: ترخيص البيانات المفتوحة في المملكة»: open data is subject to a licence that sets the conditions of use; using the data indicates acceptance of the licence terms.</p></div>
+  </div>
+  <p class="caption mt">NDMO Open Data Policy, National Data Governance Policies, version 1 of 5/5/2020, as linked from SDAIA's regulations and policies page (checked 25 November 2026). Paraphrased; the Arabic headings are quoted.</p>
+  <aside class="notes"><p>This is the pre-work reading. The policy binds public entities publishing on the National Open Data Portal; for a data user it explains why open data arrives in these formats and with a licence to read first. Ask: which of yesterday's three formats does principle 2 name? CSV and JSON among others; Parquet is not listed, and the policy says "such as".</p><p>Sources: NDMO Open Data Policy, English and Arabic editions, section 5.2.</p></aside>
+</section>
+
+<section class="slide" id="check-retry" data-lo="LO3">
+  <div class="kicker">Checkpoint</div>
+  <h2>Which response should the client retry?</h2>
+  <div class="quiz" data-type="single" data-lo="LO3">
+    <p class="lead">A pull from a weather-station network's API gets these four answers on different pages. Which one should it retry after a wait, with no change to the request?</p>
+    <div class="opts">
+      <div class="opt" data-why="Treats a client error as temporary: a malformed parameter fails the same way every time">400 Bad Request: "limit must be at most 200"</div>
+      <div class="opt" data-ok>503 Service Unavailable</div>
+      <div class="opt" data-why="Treats an authorisation failure as temporary: retrying a bad token adds load and may lock it">401 Unauthorized</div>
+      <div class="opt" data-why="Treats a missing resource as an outage: the station id does not exist, and asking again will not create it">404 Not Found for one station</div>
+    </div>
+    <div class="callout tip why"><b>Why.</b> A 503 reports a temporary failure of the server: the same request can succeed later, after a backoff.</div>
+  </div>
+  <aside class="notes"><p>Answer: 503. The 400 needs a change to the request (a smaller limit), then it is a new request, not a retry. If the room picks 401, return to the tokens slide.</p></aside>
 </section>
 
 <section class="slide lab" id="lab-2-1" data-auto="lab" data-lab="2.1">
-  <aside class="notes">REPLACE: what to watch for while participants work, the typical problems, and the fallback for anyone who did not finish an earlier lab</aside>
+  <aside class="notes"><p>AI-tutor. Watch task 3: many write the checkpoint before the records; ask them where a crash then loses data. Task 4: people forget to stop on 401 and loop. The mock runs inside the notebook, so no port or firewall issue. The last task needs the internet; if the venue blocks it, the cell says so and the rest of the lab stands. Numbers to expect are in labs/solutions/answer_key.md.</p></aside>
+</section>
+
+<section class="slide" id="api-debrief" data-lo="LO3">
+  <div class="kicker">Debrief of lab 2.1</div>
+  <h2>1,200 sessions, exactly once, through 429, 500, 503 and a crash</h2>
+  <div class="cols cols-4">
+    <div class="stat center"><div class="big">16</div><div class="lbl">requests for 12 pages, retries included</div></div>
+    <div class="stat center"><div class="big">4.2 s</div><div class="lbl">waited, on the fake clock</div></div>
+    <div class="stat center"><div class="big">100</div><div class="lbl">records dropped as duplicates on resume</div></div>
+    <div class="stat center"><div class="big">20</div><div class="lbl">ids repeated by offset paging, and 20 never seen</div></div>
+  </div>
+  <p class="caption mt">The course's reference run of lab 2.1 on the mock API (1,200 synthetic sessions). The public pull of that run read 266 rows in 6 pages, matching the API's own total.</p>
+  <aside class="notes"><p>Ask who saw the plain client die with a KeyError on 'data': the crash came from parsing a 429 body, far from the cause. The run log's summary line is the outcome's evidence: records, unique ids and the expected count equal, nothing missing. Public pull counts can change when the publisher revises the series; the check compares with the API's own total.</p></aside>
 </section>
 
 <!-- Session 2 -->
 
 <section class="slide section" id="s2" data-auto="section" data-session="2"></section>
 
-<section class="slide" id="s2-idea">
-  <div class="kicker">REPLACE: the question this slide answers</div>
-  <h2>REPLACE: one idea, stated as a sentence</h2>
+<section class="slide" id="one-table-per-grain" data-lo="LO4">
+  <div class="kicker">Flattening</div>
+  <h2>Nested JSON becomes one table per grain, with the key carried down</h2>
   <div class="cols cols-2">
+    <pre class="code" data-file="appointment.json"><code>{"visit_id": "V-0193",
+ "clinic": {"id": "C04", "floor": 2},
+ "booked_at": "2026-11-03T08:40:00+03:00",
+ "tests": [{"code": "T-11", "result": 5.4},
+           {"code": "T-27", "result": 0.9}]}</code></pre>
     <ul class="bullets">
-      <li>REPLACE: at most six bullets, each a complete thought</li>
-      <li>REPLACE: bold the key phrase; numbers come from the lab run, not from memory</li>
+      <li><b>Once per visit</b> (the clinic object): columns of the visits table, <code>clinic_id</code>, <code>clinic_floor</code>.</li>
+      <li><b>A list</b> (the tests): its own table, one row per test, with <code>visit_id</code> on every row.</li>
+      <li>Count after flattening: visits equal records; tests equal the sum of list lengths.</li>
     </ul>
-    <div class="card c-teal"><h4>In the case study</h4><p class="small mb0">REPLACE: tie the idea to the case study and its data</p></div>
   </div>
-  <div class="callout warn mt"><b>What goes wrong.</b> REPLACE: the failure participants will hit, and how to recognise it</div>
-  <aside class="notes">REPLACE: what to say, the demo to run, the question to ask the room, the common failure and its fix</aside>
+  <aside class="notes"><p>Parallel example: a clinic visit with its tests, not the lab's charging sessions. Ask what goes wrong with columns test_1, test_2, test_3: a visit with four tests. Ask what goes wrong with one row per test and the clinic repeated: the visit's own numbers are counted once per test when summed.</p></aside>
 </section>
 
-<section class="slide" id="s2-steps">
-  <div class="kicker">Step by step</div>
-  <h2>REPLACE: a process, shown one step per key press</h2>
+<section class="slide" id="declared-schema" data-lo="LO4">
+  <div class="kicker">Declared types</div>
+  <h2>Declare the schema in code, and cast to it before writing</h2>
+  <pre class="code" data-file="schema.py"><code class="language-python">import pyarrow as pa
+
+VISITS = pa.schema([
+    pa.field("visit_id", pa.string(), nullable=False),
+    pa.field("clinic_id", pa.string(), nullable=False),
+    pa.field("booked_at", pa.timestamp("us", tz="UTC"), nullable=False),
+    pa.field("month", pa.string(), nullable=False),   # the partition column
+])
+table = pa.Table.from_pandas(visits, schema=VISITS, preserve_index=False)</code></pre>
+  <ul class="bullets mt">
+    <li>A value that cannot be cast fails here, at the boundary, not in next month's report.</li>
+  </ul>
+  <aside class="notes"><p>Point at the time zone in the type: a timestamp column that says UTC cannot silently hold local times. Nullable=False turns "missing" into an error at cast time. Source: Apache Arrow Python documentation.</p></aside>
+</section>
+
+<section class="slide" id="check-written" data-lo="LO4">
+  <div class="kicker">Proof</div>
+  <h2>Prove the files match the declaration by reading their schema back</h2>
   <div class="flow">
-    <div class="step c-teal"><b>1 · REPLACE: name</b>REPLACE: what happens first</div>
-    <div class="arrow frag" data-frag="b">→</div><div class="step c-cyan frag" data-frag="b"><b>2 · REPLACE: name</b>REPLACE: the next piece</div>
-    <div class="arrow frag" data-frag="c">→</div><div class="step c-coral frag" data-frag="c"><b>3 · REPLACE: name</b>REPLACE: the result</div>
+    <div class="step c-teal"><b>1 · Write</b>partitioned by the declared column</div>
+    <div class="arrow">→</div>
+    <div class="step c-cyan"><b>2 · Read the schema</b>of one written file</div>
+    <div class="arrow">→</div>
+    <div class="step c-purple"><b>3 · Compare</b>with the declaration, minus the partition column</div>
+    <div class="arrow">→</div>
+    <div class="step c-amber"><b>4 · Count</b>rows read back from the whole folder</div>
   </div>
-  <div class="callout tip mt frag"><b>Takeaway.</b> REPLACE: the one sentence to remember</div>
-  <aside class="notes">Press once per step and say what each step adds before the next one appears. REPLACE: the example to walk through</aside>
+  <div class="callout note mt"><b>Why minus one column.</b> In hive partitioning the partition value lives in the folder name; readers add it back as a column.</div>
+  <aside class="notes"><p>This is the evidence of LO4: files whose schema matches the declared one. Printing rows is not proof: two time zones or a float and a decimal can print alike. pyarrow.parquet.read_schema reads only the footer, so the check is cheap.</p></aside>
+</section>
+
+<section class="slide" id="two-layers" data-lo="LO5">
+  <div class="kicker">Validation</div>
+  <h2>Check each record, then check the table</h2>
+  <table class="t">
+    <tr><th>Layer</th><th>Rules</th><th>Example tool</th></tr>
+    <tr><td><b>Record</b>, one at a time</td><td>Required fields, types, patterns (a time with its offset), allowed values</td><td>JSON Schema</td></tr>
+    <tr><td><b>Table</b>, the batch as a whole</td><td>Unique keys, ranges, one column against another, values that must exist in a register</td><td>Pandera</td></tr>
+  </table>
+  <ul class="bullets mt">
+    <li>Record checks run before flattening, on the raw JSON.</li>
+    <li>Table checks run on the typed table, after the cast.</li>
+  </ul>
+  <aside class="notes"><p>A primary key in a database (FND-DAT-101) is one kind of table check; here the checks run before anything reaches a database. Tools are examples: Great Expectations or plain assertions fill the same slot. Sources: JSON Schema specification; Pandera documentation.</p></aside>
+</section>
+
+<section class="slide" id="json-schema-example" data-lo="LO5">
+  <div class="kicker">Record checks</div>
+  <h2>A JSON Schema states what one record must be</h2>
+  <pre class="code" data-file="visit.schema.json"><code>{"type": "object",
+ "required": ["visit_id", "clinic", "booked_at", "tests"],
+ "properties": {
+   "visit_id": {"type": "string", "pattern": "^V-[0-9]{4}$"},
+   "booked_at": {"type": "string",
+     "pattern": "^[0-9-]{10}T[0-9:]{8}(Z|[+-][0-9]{2}:[0-9]{2})$"},
+   "tests": {"type": "array", "minItems": 1}}}</code></pre>
+  <ul class="bullets mt">
+    <li>Each error names its rule (<code>required</code>, <code>type</code>, <code>pattern</code>) and its path: the report's reason.</li>
+  </ul>
+  <aside class="notes"><p>Parallel example: the clinic visits. Show jsonschema's iter_errors on a record with booked_at cut to "2026-11-03T08:40:00": one pattern error at path booked_at. A schema is a document: version it, and add optional fields without breaking old senders (the lab's stretch).</p></aside>
+</section>
+
+<section class="slide" id="pandera-example" data-lo="LO5">
+  <div class="kicker">Table checks</div>
+  <h2>Named table checks give every failing row a reason</h2>
+  <pre class="code" data-file="checks.py"><code class="language-python">import pandera.pandas as pa
+
+checks = pa.DataFrameSchema(
+    {"visit_id": pa.Column(None, pa.Check(lambda s: ~s.duplicated(keep=False), name="duplicate_key")),
+     "clinic_id": pa.Column(None, pa.Check(lambda s: s.isin(CLINICS), name="unknown_clinic"))},
+    checks=[pa.Check(lambda df: df["seen_at"] >= df["booked_at"], name="seen_before_booked")])
+checks.validate(visits, lazy=True)   # raises SchemaErrors listing every failure</code></pre>
+  <aside class="notes"><p>lazy=True collects every failure instead of stopping at the first; err.failure_cases has the check name and the row index, which is what a quarantine file needs. Name each check: built-in checks report a generated description, which is harder for an owner to read.</p></aside>
+</section>
+
+<section class="slide" id="fail-or-quarantine" data-lo="LO5">
+  <div class="kicker">The decision</div>
+  <h2>Reject the batch, or quarantine rows: decide by written rules</h2>
+  <div class="flow v">
+    <div class="step c-coral"><b>The interface changed</b>a required field missing from nearly every record: reject the batch, name the field</div>
+    <div class="arrow">↓</div>
+    <div class="step c-amber"><b>Some rows break the rules</b>quarantine each with its reason, keep the rest</div>
+    <div class="arrow">↓</div>
+    <div class="step c-purple"><b>Too many rows break</b>above the organisation's threshold: reject the batch</div>
+    <div class="arrow">↓</div>
+    <div class="step c-teal"><b>Otherwise</b>load the valid rows</div>
+  </div>
+  <aside class="notes"><p>The thresholds are choices, not standards: the lab uses 90% for a changed interface and 5% for "too many", the case organisation's own rules. What matters is that they are written down and applied the same way every time. Ask why "too many" rejects even the good rows: the same fault may hide in rows that passed.</p></aside>
+</section>
+
+<section class="slide" id="owners-see" data-lo="LO5">
+  <div class="kicker">Quarantine</div>
+  <h2>Quarantine so that owners see what failed, and fix it at the source</h2>
+  <div class="cols cols-3">
+    <div class="card c-teal"><h4>The loader</h4><p class="small mb0">Writes each row with its rule and meaning; does not edit or release rows.</p></div>
+    <div class="card c-cyan"><h4>The data owner</h4><p class="small mb0">Corrects the source and sends the rows again.</p></div>
+    <div class="card c-purple"><h4>A second person</h4><p class="small mb0">Reviews any release of quarantined rows.</p></div>
+  </div>
+  <div class="callout note mt"><b>Next.</b> Data contracts, with versions and service levels between sender and receiver, follow in DEV-DAT-204.</div>
+  <aside class="notes"><p>Segregation of duties: whoever writes the checks should not also be the one who waives them. Deleting bad rows hides the fault from the people who can fix it; silently repairing them hides it too. The quarantine file is part of the responsible-use statement of this course.</p></aside>
+</section>
+
+<section class="slide" id="check-quarantine" data-lo="LO5">
+  <div class="kicker">Checkpoint</div>
+  <h2>Load, quarantine or reject?</h2>
+  <div class="quiz" data-type="single" data-lo="LO5">
+    <p class="lead">A library's loans batch has 400 rows. Twelve rows (3%) name a branch code that is not in the branch register; every other check passes. The written rules: reject on a changed interface, or above 5% quarantined.</p>
+    <div class="opts">
+      <div class="opt" data-why="Treats any defect as a reason to stop: the rules reject only a changed interface or more than 5%">Reject the whole batch</div>
+      <div class="opt" data-why="Repairs data the loader does not own: the branch team must say which code was meant">Map the twelve codes to the nearest valid branch and load all</div>
+      <div class="opt" data-ok>Load 388 rows and quarantine 12 with their reason</div>
+      <div class="opt" data-why="Hides the fault from its owner: dropped rows cannot be corrected and resent">Load 388 rows and drop the 12</div>
+    </div>
+    <div class="callout tip why"><b>Why.</b> 3% is under the written threshold, so the valid rows load and the twelve go to the branch team with the reason, to fix at the source.</div>
+  </div>
+  <aside class="notes"><p>Answer: load 388, quarantine 12. If the room picks "map to the nearest branch", ask who signs off that guess. If it picks "drop", ask how the branch team would ever learn.</p></aside>
 </section>
 
 <section class="slide lab" id="lab-2-2" data-auto="lab" data-lab="2.2">
-  <aside class="notes">REPLACE: what to watch for while participants work, the typical problems, and the fallback for anyone who did not finish an earlier lab</aside>
+  <aside class="notes"><p>AI-tutor. The lab starts from the supplied raw pages, so it does not depend on lab 2.1. Watch task 2: people forget to carry session_id into the readings table. Task 3: the schema comparison must leave out the partition column. Task 5: the check prints whether every seeded defect was caught and every decision is right, without showing the key. The key is labs/solutions/batch_key.json.</p></aside>
 </section>
 
-<!-- Session 3 -->
+<section class="slide" id="validate-debrief" data-lo="LO4 LO5">
+  <div class="kicker">Debrief of lab 2.2</div>
+  <h2>Two batches rejected, two partly quarantined, the clean one loaded whole</h2>
+  <table class="t small">
+    <tr><th>Batch</th><th>Decision</th><th class="num">Loaded</th><th class="num">Quarantined</th><th>Why</th></tr>
+    <tr><td>1</td><td>load</td><td class="num">200</td><td class="num">0</td><td>clean</td></tr>
+    <tr><td>2</td><td>load</td><td class="num">197</td><td class="num">3</td><td>a missing field, a wrong type, a time without offset</td></tr>
+    <tr><td>3</td><td>load</td><td class="num">194</td><td class="num">6</td><td>a duplicated key, two out-of-range values, an end before its start, an unknown station</td></tr>
+    <tr class="hl"><td>4</td><td>reject</td><td class="num">0</td><td class="num">0</td><td>energy_kwh renamed in every record</td></tr>
+    <tr class="hl"><td>5</td><td>reject</td><td class="num">0</td><td class="num">20</td><td>10% of times without offsets, above 5%</td></tr>
+  </table>
+  <aside class="notes"><p>Show after the lab. The written files matched the declared schema; 1,200 sessions and 4,187 readings; 14 day partitions. Batch 3 quarantines 6 rows for 5 defects because the duplicated session is two rows. Ask which decision people disagreed with and which rule they would write differently.</p></aside>
+</section>
 
-<section class="slide section" id="s3" data-auto="section" data-session="3"></section>
-
-<section class="slide" id="s3-idea">
-  <div class="kicker">REPLACE: the question this slide answers</div>
-  <h2>REPLACE: one idea, stated as a sentence</h2>
+<section class="slide" id="capstone-brief" data-lo="LO1 LO2 LO3 LO4 LO5">
+  <div class="kicker">The capstone</div>
+  <h2>Your follow-up task: a checked ingestion script, run live on an unseen batch</h2>
   <div class="cols cols-2">
     <ul class="bullets">
-      <li>REPLACE: at most six bullets, each a complete thought</li>
-      <li>REPLACE: bold the key phrase; numbers come from the lab run, not from memory</li>
+      <li>One script: read the register in its real encoding, convert a vendor log to UTC, validate the sessions, write typed Parquet, quarantine and report.</li>
+      <li>Practise on <code>labs/capstone/practice/</code> and on batches of your own seeds.</li>
+      <li>Hand in a public GitHub repository link within two weeks; no token or <code>.env</code> in it.</li>
     </ul>
-    <div class="card c-teal"><h4>In the case study</h4><p class="small mb0">REPLACE: tie the idea to the case study and its data</p></div>
+    <div class="card c-coral"><h4>On the day</h4><p class="small mb0">The assessor generates a batch you have not seen. You run the script live for six minutes, then answer five minutes of questions.</p></div>
   </div>
-  <div class="callout warn mt"><b>What goes wrong.</b> REPLACE: the failure participants will hit, and how to recognise it</div>
-  <aside class="notes">REPLACE: what to say, the demo to run, the question to ask the room, the common failure and its fix</aside>
-</section>
-
-<section class="slide" id="s3-steps">
-  <div class="kicker">Step by step</div>
-  <h2>REPLACE: a process, shown one step per key press</h2>
-  <div class="flow">
-    <div class="step c-teal"><b>1 · REPLACE: name</b>REPLACE: what happens first</div>
-    <div class="arrow frag" data-frag="b">→</div><div class="step c-cyan frag" data-frag="b"><b>2 · REPLACE: name</b>REPLACE: the next piece</div>
-    <div class="arrow frag" data-frag="c">→</div><div class="step c-coral frag" data-frag="c"><b>3 · REPLACE: name</b>REPLACE: the result</div>
-  </div>
-  <div class="callout tip mt frag"><b>Takeaway.</b> REPLACE: the one sentence to remember</div>
-  <aside class="notes">Press once per step and say what each step adds before the next one appears. REPLACE: the example to walk through</aside>
-</section>
-
-<section class="slide lab" id="lab-2-3" data-auto="lab" data-lab="2.3">
-  <aside class="notes">REPLACE: what to watch for while participants work, the typical problems, and the fallback for anyone who did not finish an earlier lab</aside>
-</section>
-
-<!-- Session 4 -->
-
-<section class="slide section" id="s4" data-auto="section" data-session="4"></section>
-
-<section class="slide" id="s4-idea">
-  <div class="kicker">REPLACE: the question this slide answers</div>
-  <h2>REPLACE: one idea, stated as a sentence</h2>
-  <div class="cols cols-2">
-    <ul class="bullets">
-      <li>REPLACE: at most six bullets, each a complete thought</li>
-      <li>REPLACE: bold the key phrase; numbers come from the lab run, not from memory</li>
-    </ul>
-    <div class="card c-teal"><h4>In the case study</h4><p class="small mb0">REPLACE: tie the idea to the case study and its data</p></div>
-  </div>
-  <div class="callout warn mt"><b>What goes wrong.</b> REPLACE: the failure participants will hit, and how to recognise it</div>
-  <aside class="notes">REPLACE: what to say, the demo to run, the question to ask the room, the common failure and its fix</aside>
-</section>
-
-<section class="slide" id="s4-steps">
-  <div class="kicker">Step by step</div>
-  <h2>REPLACE: a process, shown one step per key press</h2>
-  <div class="flow">
-    <div class="step c-teal"><b>1 · REPLACE: name</b>REPLACE: what happens first</div>
-    <div class="arrow frag" data-frag="b">→</div><div class="step c-cyan frag" data-frag="b"><b>2 · REPLACE: name</b>REPLACE: the next piece</div>
-    <div class="arrow frag" data-frag="c">→</div><div class="step c-coral frag" data-frag="c"><b>3 · REPLACE: name</b>REPLACE: the result</div>
-  </div>
-  <div class="callout tip mt frag"><b>Takeaway.</b> REPLACE: the one sentence to remember</div>
-  <aside class="notes">Press once per step and say what each step adds before the next one appears. REPLACE: the example to walk through</aside>
-</section>
-
-<section class="slide lab" id="lab-2-4" data-auto="lab" data-lab="2.4">
-  <aside class="notes">REPLACE: what to watch for while participants work, the typical problems, and the fallback for anyone who did not finish an earlier lab</aside>
+  <aside class="notes"><p>The brief is labs/capstone/README.md. AI-full: any assistant may help write the script, but the live run tests whether the participant can explain each decision. Passing needs the capstone batch loaded or rejected for the correct reasons.</p></aside>
 </section>
 
 <section class="slide" id="wrap-up">
-  <div class="kicker">Day 2 · wrap-up</div>
+  <div class="kicker">Day 2 · Wrap-up</div>
   <h2>Three things to keep</h2>
   <div class="cols cols-3">
-    <div class="card c-teal"><h4>Remember</h4><p class="small mb0">REPLACE: one idea participants keep</p></div>
-    <div class="card c-coral"><h4>Remember</h4><p class="small mb0">REPLACE: one idea participants keep</p></div>
-    <div class="card c-purple"><h4>Remember</h4><p class="small mb0">REPLACE: one idea participants keep</p></div>
+    <div class="card c-teal"><h4>Pull politely, prove completeness</h4><p class="small mb0">Terms first, cursor, backoff, raw pages, and a count that proves exactly once.</p></div>
+    <div class="card c-cyan"><h4>Declare, then prove</h4><p class="small mb0">A schema in code, a cast at the boundary, and the written schema read back.</p></div>
+    <div class="card c-coral"><h4>Stop bad batches visibly</h4><p class="small mb0">Reject or quarantine by written rules, and send the reasons to the owner.</p></div>
   </div>
+  <aside class="notes"><p>Then the supervised check: 60 minutes, without assistants (5 for rules and devices away, 50 for the check, 5 for collection). Its items are not in the course repository.</p></aside>
 </section>
 
-<section class="slide dark" id="thanks" data-label="Thank you">
-  <div class="kicker">SDAIA Academy</div>
-  <h1>Thank you</h1>
-  <p class="lead">Data Formats, Interfaces and Quality Checks</p>
+<section class="slide dark" id="next">
+  <div class="kicker">Next</div>
+  <h2>The supervised check now; the capstone in two weeks</h2>
+  <ul class="bullets">
+    <li>The check is without assistants; bring only the device that shows it.</li>
+    <li>Build the ingestion script in the follow-up task, and test it on several seeds.</li>
+    <li>Bring a terminal that runs it, and your repository link, to the capstone session.</li>
+  </ul>
+  <aside class="notes"><p>The follow-up task is tracked: ask participants to share their repository link at the halfway point so a trainer can open it before the capstone session.</p></aside>
 </section>
