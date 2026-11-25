@@ -1,5 +1,5 @@
 <section class="slide title" id="title" data-auto="title">
-  <aside class="notes"><p>Welcome. Ask the room: who has opened a file and found Arabic turned into question marks, or a time that was three hours off? Most hands go up; that is today. Day 1 is files: two sessions, each with a long lab. Day 2 is interfaces and the checks at the boundary. Labs are AI-tutor: an assistant may explain, you write the code. The diagnosis sheet in lab 1.2 is AI-off.</p></aside>
+  <aside class="notes"><p>Welcome. Ask the room: who has opened a file and found Arabic turned into question marks, or a time that was three hours off? Most hands go up; that is today. Day 1 is files: two sessions, each with a long lab. Day 2 is interfaces and the checks at the boundary. Labs are AI-tutor: an assistant may explain, you write the code. The pre-work and the supervised check at the end of Day 2 are AI-off.</p></aside>
 </section>
 
 <section class="slide" id="agenda" data-auto="agenda"></section>
@@ -95,7 +95,7 @@
     <li>Statistics let a reader skip row groups whose range cannot match.</li>
     <li>Similar values side by side compress well: codes, dates, small numbers.</li>
   </ul>
-  <aside class="notes"><p>Draw the contrast with a row file: to sum energy in a CSV you read every field of every line. Parquet's footer is why a reader knows the types without guessing. Keep the vocabulary: row group, column chunk, page, footer. Source: Apache Parquet file format documentation.</p></aside>
+  <aside class="notes"><p>Draw the contrast with a row file: to sum energy in a CSV you read every field of every line. Parquet's footer is why a reader knows the types without guessing. Keep the vocabulary: row group, column chunk, page, footer. Sources: Apache Parquet file format documentation; DuckDB documentation on reading Parquet (filter pushdown with min and max statistics).</p></aside>
 </section>
 
 <section class="slide" id="partitions" data-lo="LO1">
@@ -121,14 +121,16 @@ day=2026-10-21/part-0.parquet
   <h2>Arrow lets two tools share a table without copying it</h2>
   <pre class="code" data-file="interchange.py"><code class="language-python">import duckdb, pyarrow.parquet as pq
 
-loans = pq.read_table("loans.parquet", columns=["branch", "items"])
-duckdb.sql("SELECT branch, sum(items) FROM loans GROUP BY branch")</code></pre>
+loans = pq.read_table("loans.parquet",
+                      columns=["branch", "items"])
+duckdb.sql("""SELECT branch, sum(items)
+              FROM loans GROUP BY branch""")</code></pre>
   <ul class="bullets mt">
     <li>Arrow is a columnar layout in memory, as Parquet is on disk.</li>
-    <li>DuckDB finds the Python variable <code>loans</code> and scans its columns in place.</li>
+    <li>DuckDB finds the Python variable <code>loans</code> and queries it as a table.</li>
     <li>No CSV in between: the types arrive as they left.</li>
   </ul>
-  <aside class="notes"><p>Parallel example: a library's loans table, not the charging data. Run it live if you have a Parquet file at hand; otherwise show it and let lab 1.1 do it. Point out the column selection at read time: the other columns are never read from disk. Sources: Apache Arrow Python documentation; DuckDB documentation on Parquet.</p></aside>
+  <aside class="notes"><p>Parallel example: a library's loans table, not the charging data. Run it live if you have a Parquet file at hand; otherwise show it and let lab 1.1 do it. Point out the column selection at read time: the other columns are never read from disk. Sources: Apache Arrow Python documentation; DuckDB documentation, SQL on Apache Arrow and reading Parquet.</p></aside>
 </section>
 
 <section class="slide" id="measure-fairly" data-lo="LO1">
@@ -140,7 +142,7 @@ duckdb.sql("SELECT branch, sum(items) FROM loans GROUP BY branch")</code></pre>
     <div class="card c-coral"><h4>Type fidelity</h4><p class="small mb0">Column by column: same type and same values after a round trip with default readers.</p></div>
   </div>
   <div class="callout warn mt"><b>What goes wrong.</b> One timing quoted as a property of a format. Report the machine and the median, and trust sizes and fidelity more than seconds.</div>
-  <aside class="notes"><p>"Default readers" is deliberate: it is what a colleague will do with your file. Fidelity means equal values, not "looks the same when printed": a difference in the fifteenth decimal place breaks an equality check and a hash. Leave the finding for the lab.</p></aside>
+  <aside class="notes"><p>"Default readers" is deliberate: it is what a colleague will do with your file. Fidelity means equal values, not "looks the same when printed": an equality check or a hash sees differences a printout hides. Leave the findings for the lab.</p></aside>
 </section>
 
 <section class="slide" id="check-formats" data-lo="LO1">
@@ -151,7 +153,7 @@ duckdb.sql("SELECT branch, sum(items) FROM loans GROUP BY branch")</code></pre>
     <div class="opts">
       <div class="opt" data-why="Assumes quoting protects type: quotes protect delimiters, and a default reader still turns the field into the number 7">A CSV with every field in quotes</div>
       <div class="opt" data-ok>A Parquet file with the code declared as a string</div>
-      <div class="opt" data-why="Assumes JSON Lines keeps every type: default readers may still infer a number from a numeric-looking string">A JSON Lines file with default reader settings</div>
+      <div class="opt" data-why="Assumes JSON Lines keeps every type: default readers may still infer a number from a numeric-looking string">A JSON Lines file read back with the default reader settings</div>
       <div class="opt" data-why="Treats the delimiter as the problem: a semicolon changes the split, not the type a reader infers">A semicolon-separated file in UTF-8</div>
     </div>
     <div class="callout tip why"><b>Why.</b> Only a format that carries its schema tells the reader the column is text; every other choice leaves the type to the reader's guess.</div>
@@ -216,7 +218,8 @@ duckdb.sql("SELECT branch, sum(items) FROM loans GROUP BY branch")</code></pre>
     <pre class="code" data-file="python"><code class="language-python">df = pd.read_csv("grades.csv")
 df["student_code"]   # KeyError
 df.columns[0]        # '﻿student_code'
-pd.read_csv("grades.csv", encoding="utf-8-sig")</code></pre>
+pd.read_csv("grades.csv",
+            encoding="utf-8-sig")</code></pre>
   </div>
   <aside class="notes"><p>Parallel example: a school's grades export. The KeyError on a column you can see is the classic symptom. utf-8-sig removes the mark if present and reads plain UTF-8 otherwise, so it is safe as a default for files from spreadsheet tools. A UTF-16 file shows a zero byte after every ASCII letter.</p></aside>
 </section>
@@ -296,7 +299,7 @@ pd.read_csv("grades.csv", encoding="utf-8-sig")</code></pre>
 </section>
 
 <section class="slide lab" id="lab-1-2" data-auto="lab" data-lab="1.2">
-  <aside class="notes"><p>Task 2 is AI-off: collect or glance at the sheets before task 3 starts. The check prints how many codes are right, not which. Common traps: confusing the legacy register with the double-encoded notes (one fails to decode, one does not); calling Vendor B a fixed offset after looking at one day only; comparing aware times of one zone directly, which ignores fold. Answers and evidence are in labs/solutions/answer_key.md.</p></aside>
+  <aside class="notes"><p>AI-tutor, but the diagnosis sheet comes before any repair: glance at the sheets before task 3 starts. The check prints how many codes are right, not which. Common traps: confusing a file that fails to decode with one that decodes into the wrong letters; calling a clock fixed after comparing one day only; comparing aware times of one zone directly, which ignores fold. Answers and evidence are in labs/solutions/answer_key.md.</p></aside>
 </section>
 
 <section class="slide" id="text-time-debrief" data-lo="LO2">
@@ -329,7 +332,7 @@ pd.read_csv("grades.csv", encoding="utf-8-sig")</code></pre>
   <h2>Interfaces, and the checks at the boundary</h2>
   <ul class="bullets">
     <li>Copy <code>labs/.env.example</code> to <code>labs/.env</code>: the mock API's token lives there, never in a notebook.</li>
-    <li>Read principle 2 of the Open Data Policy (machine-readable formats) before session 3.</li>
+    <li>Reread principles 2 and 7 of the Open Data Policy from the pre-work before Day 2 starts.</li>
     <li>Day 2 ends with the supervised check, without assistants.</li>
   </ul>
   <aside class="notes"><p>The Open Data Policy is linked in the README's national references. The supervised check is 60 minutes at the end of Day 2: devices away except the one that shows the check.</p></aside>

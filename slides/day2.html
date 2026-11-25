@@ -10,7 +10,7 @@
   <div class="quiz" data-type="single" data-lo="LO2">
     <p class="lead">A water utility's meter readings, logged without offsets, run exactly 240 minutes ahead of the billing system's UTC times on every day of the year. What is the fault?</p>
     <div class="opts">
-      <div class="opt" data-why="Expects daylight saving to give a constant gap: its gap changes when the clocks change">A clock in a zone with daylight saving</div>
+      <div class="opt" data-why="Expects daylight saving to give a constant gap: its gap changes when the clocks change">A clock in a zone that has daylight saving time</div>
       <div class="opt" data-why="Confuses text faults with time faults: an encoding changes characters, not hours">A file saved in a legacy code page</div>
       <div class="opt" data-why="Assumes a format can shift values: CSV stores the text the device wrote">A CSV that lost the column's type</div>
       <div class="opt" data-ok>A clock on a fixed offset, read as UTC</div>
@@ -151,7 +151,7 @@ client = httpx.Client(headers=auth)</code></pre>
     <div class="card c-teal"><h4>Principle 2 · Open Format and Machine-Readable</h4><p class="small mb0"><span class="ar">«المبدأ الثاني: الصيغة المفتوحة وإمكانية القراءة آلياً»</span>: data is made available in a machine-readable format that allows automated processing, in widely used file formats such as CSV, XLS, JSON and XML.</p></div>
     <div class="card c-cyan"><h4>Principle 7 · Open Data Licensing</h4><p class="small mb0"><span class="ar">«المبدأ السابع: ترخيص البيانات المفتوحة في المملكة»</span>: open data is subject to a licence that sets the conditions of use; using the data indicates acceptance of the licence terms.</p></div>
   </div>
-  <p class="caption mt">NDMO Open Data Policy, National Data Governance Policies, version 1 of 5/5/2020, as linked from SDAIA's regulations and policies page (checked 25 November 2026). Paraphrased; the Arabic headings are quoted.</p>
+  <p class="caption mt">NDMO Open Data Policy, National Data Governance Policies, version 1 of 5/5/2020, read from the PDF on sdaia.gov.sa on 25 November 2026. Paraphrased; the Arabic headings are quoted.</p>
   <aside class="notes"><p>This is the pre-work reading. The policy binds public entities publishing on the National Open Data Portal; for a data user it explains why open data arrives in these formats and with a licence to read first. Ask: which of yesterday's three formats does principle 2 name? CSV and JSON among others; Parquet is not listed, and the policy says "such as".</p><p>Sources: NDMO Open Data Policy, English and Arabic editions, section 5.2.</p></aside>
 </section>
 
@@ -256,7 +256,7 @@ table = pa.Table.from_pandas(visits, schema=VISITS, preserve_index=False)</code>
     <li>Record checks run before flattening, on the raw JSON.</li>
     <li>Table checks run on the typed table, after the cast.</li>
   </ul>
-  <aside class="notes"><p>A primary key in a database (FND-DAT-101) is one kind of table check; here the checks run before anything reaches a database. Tools are examples: Great Expectations or plain assertions fill the same slot. Sources: JSON Schema specification; Pandera documentation.</p></aside>
+  <aside class="notes"><p>A primary key in a database (FND-DAT-101) is one kind of table check; here the checks run before anything reaches a database. Tools are examples: plain assertions in Python fill the same slot for a small batch. Sources: JSON Schema specification; Pandera documentation.</p></aside>
 </section>
 
 <section class="slide" id="json-schema-example" data-lo="LO5">
@@ -339,12 +339,12 @@ checks.validate(visits, lazy=True)   # raises SchemaErrors listing every failure
   <div class="kicker">Debrief of lab 2.2</div>
   <h2>Two batches rejected, two partly quarantined, the clean one loaded whole</h2>
   <table class="t small">
-    <tr><th>Batch</th><th>Decision</th><th class="num">Loaded</th><th class="num">Quarantined</th><th>Why</th></tr>
-    <tr><td>1</td><td>load</td><td class="num">200</td><td class="num">0</td><td>clean</td></tr>
-    <tr><td>2</td><td>load</td><td class="num">197</td><td class="num">3</td><td>a missing field, a wrong type, a time without offset</td></tr>
-    <tr><td>3</td><td>load</td><td class="num">194</td><td class="num">6</td><td>a duplicated key, two out-of-range values, an end before its start, an unknown station</td></tr>
-    <tr class="hl"><td>4</td><td>reject</td><td class="num">0</td><td class="num">0</td><td>energy_kwh renamed in every record</td></tr>
-    <tr class="hl"><td>5</td><td>reject</td><td class="num">0</td><td class="num">20</td><td>10% of times without offsets, above 5%</td></tr>
+    <tr><th>Batch</th><th>Decision</th><th>Why</th></tr>
+    <tr><td>1</td><td>load 200</td><td>clean</td></tr>
+    <tr><td>2</td><td>load 197, quarantine 3</td><td>a missing field, a wrong type, a time without offset</td></tr>
+    <tr><td>3</td><td>load 194, quarantine 6</td><td>a duplicated key, two out-of-range values, an end before its start, an unknown station</td></tr>
+    <tr class="hl"><td>4</td><td>reject</td><td>energy_kwh renamed in every record</td></tr>
+    <tr class="hl"><td>5</td><td>reject, 20 rows to quarantine</td><td>10% of times without offsets, above 5%</td></tr>
   </table>
   <aside class="notes"><p>Show after the lab. The written files matched the declared schema; 1,200 sessions and 4,187 readings; 14 day partitions. Batch 3 quarantines 6 rows for 5 defects because the duplicated session is two rows. Ask which decision people disagreed with and which rule they would write differently.</p></aside>
 </section>

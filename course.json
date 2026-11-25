@@ -147,7 +147,7 @@
                 "minutes": 10
               },
               {
-                "text": "Write the diagnosis sheet, without an assistant",
+                "text": "Write the diagnosis sheet before any repair",
                 "minutes": 20
               },
               {
@@ -428,6 +428,10 @@
         {
           "title": "DuckDB: reading Parquet files",
           "url": "https://duckdb.org/docs/stable/data/parquet/overview"
+        },
+        {
+          "title": "DuckDB: SQL on Apache Arrow (querying Arrow tables held in Python variables)",
+          "url": "https://duckdb.org/docs/stable/guides/python/sql_on_arrow"
         },
         {
           "title": "HTTPX",

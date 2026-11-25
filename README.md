@@ -38,7 +38,7 @@ Participants move data between files, interfaces and tables without losing or co
 
 **The charging network** is a fictional private operator of 40 public fast-charging stations for electric vehicles in one unnamed city, coded ST01 to ST40 in five generic sectors (North, South, East, West, Central). Its charging sessions reach the data team in four shapes: charger logs from two vendors (Vendor A and Vendor B), legacy exports from the station team's old asset system, pages of the charge-point platform's API, and the typed tables that finance and operations read. People appear only by role: the data team lead, the operations analyst, the finance controller and the station team.
 
-Every file is synthetic and generated with fixed seeds (`labs/prepare_data.py`, `labs/chargekit.py`): 200,000 sessions for the format comparison; six damaged files (a legacy-encoded register, a byte order mark, double-encoded notes, a UTF-16 log, and two charger logs without offsets, one across a daylight-saving change); 1,200 nested sessions behind a mock API with injected faults; five batches with seeded defects; and capstone batches generated from a seed. Sessions, stations and accounts are letter-prefixed codes; the files hold no telephone, identity, account or card numbers. The mock API's token is a course value that opens nothing else.
+Every file is synthetic and generated with fixed seeds (`labs/prepare_data.py`, `labs/chargekit.py`): 200,000 sessions for the format comparison; six damaged files from the station team and the two charger vendors, with encoding and time faults to diagnose; 1,200 nested sessions behind a mock API with injected faults; five batches with seeded defects; and capstone batches generated from a seed. Sessions, stations and accounts are letter-prefixed codes; the files hold no telephone, identity, account or card numbers. The mock API's token is a course value that opens nothing else.
 
 ## How the course is organised
 
@@ -49,7 +49,7 @@ Two teaching days of two long sessions each, a short pre-work task, a supervised
 | Instruction | 240 | Concepts, demonstrations, checkpoints and lab debriefs: 65 in session 1.1, 60 in 1.2, 55 in 2.1, 60 in 2.2 |
 | Labs | 360 | Lab 1.1 80, lab 1.2 90, lab 2.1 100, lab 2.2 90 |
 | Assessment | 60 | The supervised AI-off check at the end of Day 2: rules and devices away 5, the check 50, collection 5 |
-| Guided self-study | 180 | Pre-work before Day 1 (45, AI-off): read principle 2 of the Open Data Policy and a byte-and-format reading drill; the tracked follow-up task (135): the capstone ingestion script, tested on the practice batch and on batches of your own seeds |
+| Guided self-study | 180 | Pre-work before Day 1 (45, AI-off, [`labs/prework.md`](labs/prework.md)): read principles 2 and 7 of the Open Data Policy (15) and a byte, dialect and time reading drill (30); the tracked follow-up task (135): the capstone ingestion script, tested on the practice batch and on batches of your own seeds |
 | Capstone | 120 | The live runs in groups of eight: opening 8; eight participants, each with a 6-minute live run, 5 minutes of questions and 2 minutes of changeover (104); close 8 |
 
 Day 1 is 295 minutes of teaching; Day 2 is 305 minutes of teaching and the 60-minute check.
@@ -72,8 +72,6 @@ The capstone script, its report and the live run are scored with the rubric of t
 ## AI policy
 
 AI-off in the pre-work and the supervised check. AI-tutor in labs. AI-full in the capstone, which runs live.
-
-In lab 1.2 the diagnosis sheet is written without an assistant, as the first attempt at the outcome's evidence.
 
 ## Responsible use
 
@@ -145,6 +143,7 @@ Each line is a capability; the examples are interchangeable.
 
 - [Apache Arrow: Python documentation (pyarrow, datasets and partitioning)](https://arrow.apache.org/docs/python/)
 - [DuckDB: reading Parquet files](https://duckdb.org/docs/stable/data/parquet/overview)
+- [DuckDB: SQL on Apache Arrow (querying Arrow tables held in Python variables)](https://duckdb.org/docs/stable/guides/python/sql_on_arrow)
 - [HTTPX](https://www.python-httpx.org/)
 - [Requests](https://requests.readthedocs.io/)
 - [JSON Schema: specification (draft 2020-12)](https://json-schema.org/specification)
@@ -160,4 +159,4 @@ Each line is a capability; the examples are interchangeable.
 
 ### National references
 
-- NDMO Open Data Policy («سياسة البيانات المفتوحة»), one of the National Data Governance Policies, version 1 of 5/5/2020, the edition that SDAIA's regulations and policies page links to (https://sdaia.gov.sa/en/SDAIA/about/Pages/RegulationsAndPolicies.aspx, checked 25 November 2026): https://sdaia.gov.sa/en/SDAIA/about/Documents/OpenDataPolicy.pdf (Arabic: https://sdaia.gov.sa/ar/SDAIA/about/Documents/OpenDataPolicyAr.pdf). Read before the public API task of lab 2.1, for principle 2, «الصيغة المفتوحة وإمكانية القراءة آلياً» (open format and machine-readable).
+- NDMO Open Data Policy («سياسة البيانات المفتوحة»), one of the National Data Governance Policies, version 1 of 5/5/2020, read from the PDFs at https://sdaia.gov.sa/en/SDAIA/about/Documents/OpenDataPolicy.pdf (Arabic: https://sdaia.gov.sa/ar/SDAIA/about/Documents/OpenDataPolicyAr.pdf) on 25 November 2026; SDAIA's regulations and policies page (https://sdaia.gov.sa/en/SDAIA/about/Pages/RegulationsAndPolicies.aspx) lists the national policies but refuses automated requests, so the edition it shows was not checked by script. Read in the pre-work for principle 2, «الصيغة المفتوحة وإمكانية القراءة آلياً» (open format and machine-readable), and principle 7, «ترخيص البيانات المفتوحة في المملكة» (open data licensing).

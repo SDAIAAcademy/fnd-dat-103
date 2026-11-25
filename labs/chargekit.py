@@ -13,9 +13,18 @@ import json
 import os
 import random
 import statistics
+import sys
 import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+
+# Print Arabic and arrows safely when output goes to a file or a console on a legacy code page.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        if (getattr(_stream, "encoding", "") or "").lower().replace("-", "") != "utf8":
+            _stream.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError, OSError):
+        pass
 
 LABS = Path(__file__).resolve().parent
 DATA = LABS / "data"

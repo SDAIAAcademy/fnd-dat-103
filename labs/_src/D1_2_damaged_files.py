@@ -13,15 +13,15 @@
 # the four text files and the two sets of timestamps, check the repairs against the clean
 # register and the platform's own UTC times, and write a repair log.
 #
-# **AI policy: AI-off for task 2** (the diagnosis sheet is your own reading of the evidence), AI-tutor
-# for the rest.
+# **AI policy: AI-tutor.** An assistant may explain an encoding or an error; the diagnosis sheet is
+# your own reading of the evidence, written before any repair.
 #
 # **Reference state.** The lab starts from `data/damaged/` (six files), `data/stations.csv` and
 # `data/platform_sessions.csv`. It needs no earlier lab.
 #
 # **Tasks**
 # - [ ] 1 · Run the setup cell and look at the six files as bytes (10')
-# - [ ] 2 · Write the diagnosis sheet, without an assistant (20')
+# - [ ] 2 · Write the diagnosis sheet before any repair (20')
 # - [ ] 3 · Repair the four text files (25')
 # - [ ] 4 · Convert Vendor A's times to UTC (10')
 # - [ ] 5 · Convert Vendor B's times to UTC across the clock change (15')
@@ -79,7 +79,7 @@ for name, v in (("Vendor A", vend_a), ("Vendor B", vend_b)):
 print(vend_b.iloc[5:14].to_string(index=False))
 
 # %% [markdown]
-# ## 2 · The diagnosis sheet (20', AI-off)
+# ## 2 · The diagnosis sheet (20')
 #
 # For each file, write the code of the fault and one line of evidence from what you saw.
 #

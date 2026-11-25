@@ -20,6 +20,7 @@ The notebooks are generated from the percent-format sources in `labs/_src/` by `
 
 | Path | What it is |
 |---|---|
+| `prework.md` | The pre-work before Day 1: the Open Data Policy reading and a reading drill, with answers |
 | `chargekit.py` | The helper module every lab imports (`import chargekit as U`): paths, quick mode, checks, the case's generators, the declared schemas, the reference versions the safety nets use |
 | `mockapi.py` | The mock charge-point platform API (FastAPI) with its fault schedule |
 | `prepare_data.py` | Writes `data/` from fixed seeds; run it to rebuild the data byte for byte |
