@@ -67,7 +67,7 @@ Day 1 is 295 minutes of teaching; Day 2 is 305 minutes of teaching and the 60-mi
 
 **Certificate:** completion with assessed work
 
-The capstone script, its report and the live run are scored with the rubric of the capstone deck (six criteria, 100 points): the live-run criterion carries 25 of the 100, the same share as the live run's 10% within the capstone's 40%. The supervised check items are kept out of this repository.
+The capstone script, its report and the live run are scored with the rubric of the capstone deck (six criteria, 100 points): the live-run criterion carries 25 of the 100, the same share as the live run's 10% within the capstone's 40%. The supervised check items are kept out of this repository; they are still to be written before the first cohort.
 
 ## AI policy
 
@@ -82,6 +82,8 @@ In the labs: lab 2.1 reads the mock API's terms and the public series' licence b
 ## The capstone: a checked ingestion script
 
 A checked ingestion script, run live on a batch the assessor supplies. Each participant submits a public GitHub repository link within two weeks of the workshop: the script, its declared schemas, a README with its rules and how to run it, and the report of a run on the practice batch, with no token, key or `.env` file. On the capstone day the assessor generates an unseen batch with `labs/capstone/make_batch.py` from a seed of their choice and keeps its key; the participant runs the script live (6 minutes) and answers questions (5). The brief is `labs/capstone/README.md`; the practice batch and its key are in `labs/capstone/`.
+
+Participants hold the batch generator and the helper module, so they know every kind of fault a batch can carry; that is intended, since the task is to handle them all. The live run stays a fair test because the assessor draws the seed privately (a large number, eight digits or more, never a small one a participant could have tried in advance), hands the batch over by its letter and keeps the key: the participant cannot know which kind of batch, which encoding or which ids they will get, and must explain the decision their script makes.
 
 ## The data, the mock API and the public API
 

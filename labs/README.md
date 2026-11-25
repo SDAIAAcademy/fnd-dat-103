@@ -31,4 +31,6 @@ The notebooks are generated from the percent-format sources in `labs/_src/` by `
 
 **Quick mode.** `FDT103_QUICK=1` makes lab 1.1 use 20,000 sessions instead of 200,000; the other labs are small already. **Outputs** go to `labs/out/` (git ignores it), or to the folder named in `FDT103_OUT`.
 
-To run a solution as a script (from `labs/`): `uv run python _src/D2_1_api_client.py`. To execute a notebook: `uv run jupyter execute solutions/D2_1_api_client.ipynb`.
+To run a solution as a script (from `labs/`): `uv run python _src/D2_1_api_client.py`. To execute a notebook: `uv run jupyter execute solutions/D2_1_api_client.ipynb`. On a Windows computer whose system code page is not UTF-8 (an Arabic Windows uses cp1256), set `PYTHONUTF8=1` first (`$env:PYTHONUTF8 = "1"` in PowerShell): `jupyter execute` opens the notebook file with the system code page, which turns the Arabic in lab 1.2's checks into the very mojibake the lab teaches. Opening the notebooks in Jupyter Lab or Colab is not affected.
+
+`uv.lock` pins the versions the labs were last run with; `uv sync` installs exactly those.

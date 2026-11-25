@@ -291,16 +291,21 @@ import httpx
 
 BASE = "https://api.worldbank.org/v2"
 SERIES = "EG.ELC.ACCS.ZS"  # access to electricity, % of population
+def get_json(web, url, params):
+    r = web.get(url, params=params)
+    r.raise_for_status()  # a 429 or 5xx stops here, before .json() meets an error page
+    return r.json()
+
 try:
     with httpx.Client(timeout=30) as web:
-        meta = web.get(f"{BASE}/sources/2/series/{SERIES}/metadata", params={"format": "json"}).json()
+        meta = get_json(web, f"{BASE}/sources/2/series/{SERIES}/metadata", {"format": "json"})
         fields = {v["id"]: v["value"] for v in meta["source"][0]["concept"][0]["variable"][0]["metatype"]}
         licence = fields.get("License_Type")
         print("licence of the series:", licence, "|", fields.get("License_URL"))
         U.check(licence == "CC BY-4.0", "the series is under CC BY 4.0: attribute the source when you reuse it")
         rows, page, pages, total = [], 1, None, None
         while pages is None or page <= pages:
-            head, data = web.get(f"{BASE}/country/all/indicator/{SERIES}", params={"date": "2023", "format": "json", "per_page": 50, "page": page}).json()
+            head, data = get_json(web, f"{BASE}/country/all/indicator/{SERIES}", {"date": "2023", "format": "json", "per_page": 50, "page": page})
             pages, total = int(head["pages"]), int(head["total"])
             rows += data or []
             page += 1
@@ -308,8 +313,10 @@ try:
     keys = {(r["country"]["id"], r["date"]) for r in rows}
     print(f"{len(rows)} rows in {pages} pages; the API reports {total}; with a value: {sum(r['value'] is not None for r in rows)}")
     U.check(len(rows) == total == len(keys), "every row of the public series pulled once, by the API's own count")
-except (httpx.HTTPError, OSError, ValueError, KeyError) as e:
-    print("The public API did not answer here:", type(e).__name__, "| tasks 1 to 6 stand; try this cell again later.")
+except AssertionError as e:
+    print("Stopped:", e, "| the licence or the count is not what this lab expects; read the series' metadata before pulling again.")
+except (httpx.HTTPError, OSError, ValueError, KeyError, IndexError, TypeError) as e:
+    print("The public API did not answer as expected here:", type(e).__name__, "| tasks 1 to 6 stand; try this cell again later.")
 
 # %% [markdown]
 # ### Check yourself
