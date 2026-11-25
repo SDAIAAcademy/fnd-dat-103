@@ -3,24 +3,24 @@
   "version": 1,
   "questions": [
     {
-      "id": "q-example-1",
+      "id": "q-lo1-append-log",
       "type": "single",
-      "prompt": "REPLACE: a practice question on LO1, as a short scenario",
+      "prompt": "A fleet of parking meters writes one record each time a car leaves, all day, to a file that a nightly job reads. Which format suits that file best?",
       "options": [
-        "REPLACE: a wrong option that a common misconception makes tempting",
-        "REPLACE: the right answer",
-        "REPLACE: a wrong option that a common misconception makes tempting",
-        "REPLACE: a wrong option that a common misconception makes tempting"
+        "One JSON document holding an array of all the day's records",
+        "A Parquet file rewritten after every record",
+        "JSON Lines, one record per line, with its schema written down",
+        "A spreadsheet workbook saved after every record"
       ],
       "correct": [
-        1
+        2
       ],
-      "explanation": "REPLACE: why the right answer is right, in one sentence",
+      "explanation": "JSON Lines appends one complete record per line, so a writer adds a line and a reader streams them; the written schema covers what the text format cannot carry.",
       "misconceptions": [
-        "REPLACE: the misconception behind this option",
+        "Treats a JSON array as appendable: the closing bracket means every append rewrites the file",
+        "Treats columnar as always best: Parquet files are written whole, not appended one record at a time",
         "",
-        "REPLACE: the misconception behind this option",
-        "REPLACE: the misconception behind this option"
+        "Treats a workbook as a log: rewriting a whole workbook per record is slow and fragile"
       ],
       "lo": [
         "LO1"
@@ -32,63 +32,121 @@
       "weight": 1
     },
     {
-      "id": "q-example-2",
+      "id": "q-lo1-columns-read",
+      "type": "single",
+      "prompt": "An analyst sums one column of a 40-column table of 50 million rows. Why does the Parquet copy answer faster than the CSV copy?",
+      "options": [
+        "Parquet keeps the rows sorted, so the sum stops early",
+        "Parquet reads only that column's chunks, already typed",
+        "Parquet files hold fewer rows than the CSV",
+        "Parquet keeps the whole table in memory between queries"
+      ],
+      "correct": [
+        1
+      ],
+      "explanation": "Columns are stored together with their types, so the reader fetches one column's chunks and skips parsing text; a CSV must be read and parsed line by line.",
+      "misconceptions": [
+        "Confuses statistics with sorting: a sum needs every value whatever the order",
+        "",
+        "Assumes compression drops rows: the same data has the same rows in both files",
+        "Confuses a file format with a cache: a file on disk keeps nothing in memory"
+      ],
+      "lo": [
+        "LO1"
+      ],
+      "day": "day1",
+      "session": 1,
+      "level": "understand",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "q-lo1-timing-claim",
       "type": "tf",
-      "prompt": "REPLACE: a statement on LO2 that is true",
+      "prompt": "One read of a CSV took 0.4 seconds and one read of the same data as Parquet took 0.6 seconds on a colleague's laptop. That is enough evidence to state that CSV reads faster than Parquet for this data.",
       "options": [
         "True",
         "False"
       ],
       "correct": [
+        1
+      ],
+      "explanation": "One timing on one machine moves with the cache and the run; compare medians of several reads on one machine, and trust sizes and type fidelity more than seconds.",
+      "misconceptions": [
+        "Treats a single timing as a property of the format",
+        ""
+      ],
+      "lo": [
+        "LO1"
+      ],
+      "day": "day1",
+      "session": 1,
+      "level": "evaluate",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "q-lo1-partition-column",
+      "type": "single",
+      "prompt": "A hospital pharmacy writes dispensing records as Parquet. Most queries ask for one month, sometimes one ward. Which partition column fits?",
+      "options": [
+        "The prescription number",
+        "The patient's record code",
+        "The dispensing month",
+        "The exact time of dispensing, to the second"
+      ],
+      "correct": [
+        2
+      ],
+      "explanation": "A partition column should match the common filter and have tens to hundreds of values; one folder per month lets a query open only its month.",
+      "misconceptions": [
+        "Picks a unique key: one folder per prescription writes millions of tiny files",
+        "Picks an identifier people rarely filter on, and one with too many values",
+        "",
+        "Picks the finest grain possible: almost every row gets its own folder"
+      ],
+      "lo": [
+        "LO1"
+      ],
+      "day": "day1",
+      "session": 1,
+      "level": "apply",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "q-lo2-keyerror",
+      "type": "single",
+      "prompt": "A training centre's attendance export opens in pandas, the first column is visibly named trainee_code, yet df[\"trainee_code\"] raises a KeyError. What is the likely cause?",
+      "options": [
+        "A UTF-8 byte order mark glued to the first column name",
+        "The file uses semicolons instead of commas",
+        "The trainee codes have leading zeros",
+        "The file was saved with Windows line endings"
+      ],
+      "correct": [
         0
       ],
-      "explanation": "REPLACE: why the right answer is right, in one sentence",
+      "explanation": "Read as plain UTF-8, the mark becomes an invisible character at the start of the first column name; utf-8-sig removes it.",
       "misconceptions": [
         "",
-        "REPLACE: the misconception behind this option"
+        "Expects a wrong delimiter to rename one column: it would put every column into one",
+        "Confuses a value problem with a name problem: zeros change values, not column names",
+        "Expects line endings to change the header: pandas handles CRLF line endings"
       ],
       "lo": [
         "LO2"
       ],
       "day": "day1",
-      "session": 1,
-      "level": "understand",
+      "session": 2,
+      "level": "analyse",
       "pool": "practice",
       "weight": 1
     },
     {
-      "id": "q-example-3",
-      "type": "single",
-      "prompt": "REPLACE: a practice question on LO3, as a short scenario",
-      "options": [
-        "REPLACE: a wrong option that a common misconception makes tempting",
-        "REPLACE: the right answer",
-        "REPLACE: a wrong option that a common misconception makes tempting",
-        "REPLACE: a wrong option that a common misconception makes tempting"
-      ],
-      "correct": [
-        1
-      ],
-      "explanation": "REPLACE: why the right answer is right, in one sentence",
-      "misconceptions": [
-        "REPLACE: the misconception behind this option",
-        "",
-        "REPLACE: the misconception behind this option",
-        "REPLACE: the misconception behind this option"
-      ],
-      "lo": [
-        "LO3"
-      ],
-      "day": "day1",
-      "session": 1,
-      "level": "apply",
-      "pool": "practice",
-      "weight": 1
-    },
-    {
-      "id": "q-example-4",
+      "id": "q-lo2-cp1256-silent",
       "type": "tf",
-      "prompt": "REPLACE: a statement on LO4 that is true",
+      "prompt": "Decoding a file as Windows-1256 can succeed without any error even when the file is really UTF-8.",
       "options": [
         "True",
         "False"
@@ -96,46 +154,436 @@
       "correct": [
         0
       ],
-      "explanation": "REPLACE: why the right answer is right, in one sentence",
+      "explanation": "Windows-1256 maps every byte to a character, so it never fails; it returns the wrong letters, which is why a known word must confirm the encoding.",
       "misconceptions": [
         "",
-        "REPLACE: the misconception behind this option"
+        "Assumes a wrong encoding always raises an error"
       ],
       "lo": [
-        "LO4"
+        "LO2"
       ],
       "day": "day1",
+      "session": 2,
+      "level": "understand",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "q-lo2-zero-bytes",
+      "type": "single",
+      "prompt": "The first bytes of a supplier's price list read ff fe 70 00 72 00 69 00. What is it?",
+      "options": [
+        "A UTF-8 file with a byte order mark",
+        "A Windows-1256 file",
+        "A file that was double-encoded",
+        "UTF-16 text, little-endian"
+      ],
+      "correct": [
+        3
+      ],
+      "explanation": "ff fe is the UTF-16 little-endian mark, and a zero byte after each ASCII letter is how UTF-16 stores them.",
+      "misconceptions": [
+        "Mixes up the marks: the UTF-8 mark is ef bb bf",
+        "Expects a single-byte code page to contain zero bytes: its letters are one byte each",
+        "Confuses two faults: double encoding is valid UTF-8 with wrong letters, not zero bytes",
+        ""
+      ],
+      "lo": [
+        "LO2"
+      ],
+      "day": "day1",
+      "session": 2,
+      "level": "analyse",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "q-lo2-offset-changes",
+      "type": "single",
+      "prompt": "A border-crossing camera logs times without offsets. Compared with a UTC reference, it is 60 minutes ahead in winter and 120 minutes ahead in summer. What is the right repair?",
+      "options": [
+        "Subtract 90 minutes from every time",
+        "Read the times in the camera's zone, then convert to UTC",
+        "Subtract 60 minutes, the winter gap, from every time",
+        "Drop the summer months as unreliable"
+      ],
+      "correct": [
+        1
+      ],
+      "explanation": "A gap that changes with the date is a zone with daylight saving; only that zone's rules give each time its own offset.",
+      "misconceptions": [
+        "Averages two offsets: every time ends up wrong by 30 minutes",
+        "",
+        "Treats a changing gap as fixed: summer times stay an hour off",
+        "Throws data away instead of reading it right"
+      ],
+      "lo": [
+        "LO2"
+      ],
+      "day": "day1",
+      "session": 2,
+      "level": "apply",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "q-lo2-repeated-hour",
+      "type": "tf",
+      "prompt": "In a zone that leaves daylight saving in autumn, a bare local time inside the repeated hour can be placed in UTC from the time alone.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correct": [
+        1
+      ],
+      "explanation": "The repeated hour happens twice with two offsets; another clue, such as the order of events, is needed to choose the pass.",
+      "misconceptions": [
+        "Assumes every local time names one instant",
+        ""
+      ],
+      "lo": [
+        "LO2"
+      ],
+      "day": "day1",
+      "session": 2,
+      "level": "understand",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "q-lo3-retry-401",
+      "type": "single",
+      "prompt": "A client of a weather-station API gets 401 Unauthorized on its first request. What should it do?",
+      "options": [
+        "Retry with exponential backoff, up to six times",
+        "Wait one minute and try again",
+        "Stop and report it: the credentials are wrong or missing",
+        "Switch to the offset endpoint"
+      ],
+      "correct": [
+        2
+      ],
+      "explanation": "A 401 says the request itself is not allowed; repeating it adds load and can lock the token, so the client stops and reports.",
+      "misconceptions": [
+        "Retries every error: backoff is for temporary failures such as 503",
+        "Treats an authorisation failure as a rate limit",
+        "",
+        "Thinks a different endpoint bypasses authentication"
+      ],
+      "lo": [
+        "LO3"
+      ],
+      "day": "day2",
+      "session": 1,
+      "level": "apply",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "q-lo3-retry-after",
+      "type": "single",
+      "prompt": "A city transit API answers 429 Too Many Requests with the header Retry-After: 30. What does a well-behaved client do next?",
+      "options": [
+        "Waits 30 seconds, then sends the same request again",
+        "Sends the request again at once from a second token",
+        "Gives up on the pull and reports the API as down",
+        "Waits one second and doubles the page size"
+      ],
+      "correct": [
+        0
+      ],
+      "explanation": "The server has said how long to wait; honouring Retry-After is both polite and the fastest way back to a 200.",
+      "misconceptions": [
+        "",
+        "Evades the limit instead of respecting it, which breaks most APIs' terms",
+        "Treats a rate limit as an outage: the API is up and has said when to return",
+        "Ignores the header and asks for more per request, which may be limited too"
+      ],
+      "lo": [
+        "LO3"
+      ],
+      "day": "day2",
+      "session": 1,
+      "level": "apply",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "q-lo3-offset-inserts",
+      "type": "single",
+      "prompt": "A client pages a news-alerts API by offset, newest first, 100 per page. During the pull, 15 new alerts are published. What happens?",
+      "options": [
+        "Nothing changes: offsets are fixed when the pull starts",
+        "The client gets 15 alerts twice and never sees the 15 new ones",
+        "The client sees the 15 new alerts on its next page",
+        "The API returns an error and the pull restarts"
+      ],
+      "correct": [
+        1
+      ],
+      "explanation": "New items at the top shift every later item down, so the next offset repeats 15 already seen; a cursor names the last item seen and does not shift.",
+      "misconceptions": [
+        "Assumes an offset is a snapshot: it is a position in a list that keeps changing",
+        "",
+        "Expects new items to appear further down: newest first puts them before the current offset",
+        "Expects the API to detect the change: offset paging fails silently"
+      ],
+      "lo": [
+        "LO3"
+      ],
+      "day": "day2",
+      "session": 1,
+      "level": "analyse",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "q-lo3-idempotent",
+      "type": "tf",
+      "prompt": "If a pull stops after writing a page's records but before saving its checkpoint, a rerun that skips ids already kept loads every record exactly once.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correct": [
+        0
+      ],
+      "explanation": "The rerun fetches that page again, and keying the write by id makes the second write change nothing: an idempotent load.",
+      "misconceptions": [
+        "",
+        "Assumes a page fetched twice must produce duplicates whatever the write does"
+      ],
+      "lo": [
+        "LO3"
+      ],
+      "day": "day2",
       "session": 1,
       "level": "understand",
       "pool": "practice",
       "weight": 1
     },
     {
-      "id": "q-example-5",
+      "id": "q-lo3-token",
       "type": "single",
-      "prompt": "REPLACE: a practice question on LO5, as a short scenario",
+      "prompt": "A colleague's notebook pulling from a ticketing API has the token typed into a cell. What is the safest change?",
       "options": [
-        "REPLACE: a wrong option that a common misconception makes tempting",
-        "REPLACE: the right answer",
-        "REPLACE: a wrong option that a common misconception makes tempting",
-        "REPLACE: a wrong option that a common misconception makes tempting"
+        "Put the token in a comment so it does not run",
+        "Split the token into two strings joined at run time",
+        "Clear the notebook's outputs before sharing it",
+        "Read it from an environment variable or an ignored .env file"
+      ],
+      "correct": [
+        3
+      ],
+      "explanation": "A token in code travels with every copy, history and output of the notebook; reading it from the environment keeps it out of all of them.",
+      "misconceptions": [
+        "Thinks a comment hides it: the text is still in the file and its history",
+        "Thinks obfuscation is protection: anyone can join the two strings",
+        "Clears only outputs: the token stays in the cell's source",
+        ""
+      ],
+      "lo": [
+        "LO3"
+      ],
+      "day": "day2",
+      "session": 1,
+      "level": "apply",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "q-lo4-grain",
+      "type": "single",
+      "prompt": "Each order from a bakery's API holds a customer object and a list of items. How should it be flattened for analysis?",
+      "options": [
+        "One wide table with columns item_1, item_2, item_3 and so on",
+        "An orders table and an items table that carries the order id",
+        "One table per customer",
+        "Keep each order's item list as a JSON string in one column"
       ],
       "correct": [
         1
       ],
-      "explanation": "REPLACE: why the right answer is right, in one sentence",
+      "explanation": "Things that occur once per order become columns of the orders table; the list becomes its own table at the item grain, joined back by the order id.",
       "misconceptions": [
-        "REPLACE: the misconception behind this option",
+        "Fixes the number of items in advance: a longer order breaks the table",
         "",
-        "REPLACE: the misconception behind this option",
-        "REPLACE: the misconception behind this option"
+        "Confuses grouping with flattening: tables are made per grain, not per value",
+        "Leaves the nesting in place: the items cannot be typed, filtered or summed"
+      ],
+      "lo": [
+        "LO4"
+      ],
+      "day": "day2",
+      "session": 2,
+      "level": "apply",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "q-lo4-schema-proof",
+      "type": "single",
+      "prompt": "After writing a partitioned Parquet dataset, how do you prove the files have the declared schema?",
+      "options": [
+        "Print the first rows and look at them",
+        "Count the rows in each partition",
+        "Read the schema of a written file and compare it with the declared one",
+        "Check that the folder names start with the partition column"
+      ],
+      "correct": [
+        2
+      ],
+      "explanation": "The file's own schema is what readers will get: compare names, types, time zone and nullability with the declaration, leaving out the partition column that lives in the path.",
+      "misconceptions": [
+        "Trusts printed values: a float and a decimal, or two time zones, can print alike",
+        "Checks completeness, not types",
+        "",
+        "Checks the layout, not the content of the files"
+      ],
+      "lo": [
+        "LO4"
+      ],
+      "day": "day2",
+      "session": 2,
+      "level": "apply",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "q-lo4-partition-in-path",
+      "type": "tf",
+      "prompt": "In a hive-partitioned dataset, the partition column is stored inside every Parquet file as well as in the folder names.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correct": [
+        1
+      ],
+      "explanation": "The value lives in the folder name (day=2026-10-21); readers add it back as a column when they read the dataset.",
+      "misconceptions": [
+        "Assumes every column of the table is in every file",
+        ""
+      ],
+      "lo": [
+        "LO4"
+      ],
+      "day": "day2",
+      "session": 2,
+      "level": "understand",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "q-lo5-renamed-field",
+      "type": "single",
+      "prompt": "Every record of today's batch from a lab-results supplier has result_value renamed to value. What should the load do?",
+      "options": [
+        "Reject the batch and report the changed field to the supplier",
+        "Quarantine all records one by one",
+        "Rename the field silently and load the batch",
+        "Load the batch with result_value left empty"
+      ],
+      "correct": [
+        0
+      ],
+      "explanation": "When every record breaks the same way, the interface changed: rejecting once names the cause, and the supplier fixes it at the source.",
+      "misconceptions": [
+        "",
+        "Hides one cause behind hundreds of row reports",
+        "Repairs a contract break without the owner knowing, so the next change goes unnoticed",
+        "Loads data that is known to be incomplete"
       ],
       "lo": [
         "LO5"
       ],
-      "day": "day1",
-      "session": 1,
+      "day": "day2",
+      "session": 2,
       "level": "apply",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "q-lo5-quarantine-owner",
+      "type": "single",
+      "prompt": "A load quarantines 6 rows of a 400-row batch from a school's attendance system. Who should act on them, and how?",
+      "options": [
+        "The loader's author fixes the rows and loads them the same day",
+        "Nobody: quarantined rows are deleted after a week",
+        "The school's data owner corrects them at the source and resends; someone else reviews the release",
+        "The analyst who reads the tables fills in the gaps by hand"
+      ],
+      "correct": [
+        2
+      ],
+      "explanation": "Quarantine exists so owners see what failed; the owner corrects the source, and keeping release apart from the loader's author keeps the check honest.",
+      "misconceptions": [
+        "Lets the person who wrote the checks also override them: no separation of duties",
+        "Treats quarantine as deletion: the owner never learns what failed",
+        "",
+        "Patches the output instead of the source, so the fault returns next batch"
+      ],
+      "lo": [
+        "LO5"
+      ],
+      "day": "day2",
+      "session": 2,
+      "level": "evaluate",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "q-lo5-clean-pass",
+      "type": "tf",
+      "prompt": "To show that a set of validation checks works, it must catch every seeded defect and also let a clean batch pass.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correct": [
+        0
+      ],
+      "explanation": "Catching defects alone is not enough: checks that reject everything would also catch them; the clean batch passing shows they reject only what is wrong.",
+      "misconceptions": [
+        "",
+        "Counts catching defects as enough, without a clean batch that must pass"
+      ],
+      "lo": [
+        "LO5"
+      ],
+      "day": "day2",
+      "session": 2,
+      "level": "evaluate",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "q-lo5-table-rule",
+      "type": "single",
+      "prompt": "Which rule needs the whole batch, not one record at a time?",
+      "options": [
+        "Every reading has a number for its value",
+        "Every time carries a UTC offset",
+        "No order id appears twice in the batch",
+        "The status is one of three allowed words"
+      ],
+      "correct": [
+        2
+      ],
+      "explanation": "Uniqueness compares rows with each other, so it runs on the table; types, patterns and allowed values can be checked on each record alone, for example with a JSON Schema.",
+      "misconceptions": [
+        "A type check looks at one value in one record",
+        "A pattern check looks at one value in one record",
+        "",
+        "An allowed-values check looks at one value in one record"
+      ],
+      "lo": [
+        "LO5"
+      ],
+      "day": "day2",
+      "session": 2,
+      "level": "understand",
       "pool": "practice",
       "weight": 1
     }

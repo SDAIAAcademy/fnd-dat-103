@@ -9,7 +9,7 @@
     "en": "Data Formats, Interfaces and Quality Checks",
     "ar": "صيغ البيانات وواجهاتها وفحوص جودتها"
   },
-  "tagline": "REPLACE: one line under the title: what participants can do after the course",
+  "tagline": "Move data between files, interfaces and tables without losing or corrupting it, and stop a bad batch at the boundary",
   "description": "Participants move data between files, interfaces and tables without losing or corrupting it. They compare delimited, JSON Lines and columnar files, repair encoding and time-zone faults, write a paginated API client with retries, flatten nested JSON and declare a schema whose checks stop a bad batch from loading.",
   "track": "foundations",
   "level": 100,
@@ -55,8 +55,8 @@
     }
   ],
   "case_study": {
-    "name": "REPLACE: the name of the fictional organisation every lab works on",
-    "summary": "REPLACE: two sentences on the case study and its synthetic data"
+    "name": "The charging network",
+    "summary": "The charging network is a fictional private operator of 40 public fast-charging stations for electric vehicles in one unnamed city, whose charging sessions reach the data team as charger logs from two vendors, legacy exports from the station team and pages of the charge-point platform API. Every file is synthetic and generated with a fixed seed: 200,000 sessions for the format comparison, six damaged files, 1,200 nested sessions behind a mock API with injected faults, five batches with seeded defects, and capstone batches an assessor generates from a seed."
   },
   "format": "workshop",
   "format_note": "Workshop: two days with labs, a short pre-work task and a tracked follow-up task",
@@ -72,63 +72,102 @@
     {
       "id": "day1",
       "kind": "day",
-      "title": "REPLACE: the theme of this unit, in a few words",
+      "title": "Files: formats, text and time",
       "deck": "slides/day1.html",
+      "subtitle": "What a file promises, what it loses, and how bytes and clocks corrupt data",
       "sessions": [
         {
-          "title": "REPLACE: the title of Session 1",
-          "outcomes": [
-            "REPLACE: what a participant can do after this session; list in lo the course outcomes it serves"
+          "title": "File formats",
+          "minutes": 145,
+          "lo": [
+            "LO1"
           ],
-          "lo": [],
+          "summary": "Delimited dialects, JSON and JSON Lines, columnar files with partitions, and in-memory interchange, compared by measurement",
+          "outcomes": [
+            "Name the dialect settings a delimited file needs: delimiter, quoting, encoding, line ending",
+            "Explain how columnar files store types, compress columns and read only what a query needs",
+            "Measure size, read time and type fidelity of one dataset in three formats"
+          ],
           "lab": {
             "id": "1.1",
-            "title": "REPLACE: what participants build in lab 1.1",
-            "summary": "REPLACE: one line on what participants build and take away; then list the steps of the lab in course.json, their minutes adding up to 25",
-            "minutes": 25,
-            "href": "D1_1.ipynb"
+            "title": "One dataset, three formats",
+            "summary": "The same 200,000 charging sessions written as CSV, JSON Lines and Parquet, measured for size, read time and type fidelity, and queried with DuckDB",
+            "minutes": 80,
+            "href": "D1_1_three_formats.ipynb",
+            "steps": [
+              {
+                "text": "Run the setup cell and generate the sessions table",
+                "minutes": 5
+              },
+              {
+                "text": "Write CSV, JSON Lines and Parquet and compare their sizes",
+                "minutes": 15
+              },
+              {
+                "text": "Read each file back and time it",
+                "minutes": 15
+              },
+              {
+                "text": "Check type fidelity column by column",
+                "minutes": 20
+              },
+              {
+                "text": "Query the Parquet file with DuckDB, and hand it an Arrow table",
+                "minutes": 10
+              },
+              {
+                "text": "Write the comparison table and a recommendation",
+                "minutes": 15
+              }
+            ],
+            "stretch": "Write the Parquet partitioned by day and query one partition"
           }
         },
         {
-          "title": "REPLACE: the title of Session 2",
-          "outcomes": [
-            "REPLACE: what a participant can do after this session; list in lo the course outcomes it serves"
+          "title": "Text and time",
+          "minutes": 150,
+          "lo": [
+            "LO2"
           ],
-          "lo": [],
+          "summary": "Bytes and characters, UTF-8 and legacy Arabic code pages, byte order marks, offsets, UTC and daylight saving",
+          "outcomes": [
+            "Tell bytes from characters and read a file’s first bytes for its encoding",
+            "Recognise the symptom of a wrong code page, a byte order mark, double encoding and UTF-16",
+            "Convert local times without offsets to UTC, across a daylight-saving change"
+          ],
           "lab": {
             "id": "1.2",
-            "title": "REPLACE: what participants build in lab 1.2",
-            "summary": "REPLACE: one line on what participants build and take away; then list the steps of the lab in course.json, their minutes adding up to 25",
-            "minutes": 25,
-            "href": "D1_2.ipynb"
-          }
-        },
-        {
-          "title": "REPLACE: the title of Session 3",
-          "outcomes": [
-            "REPLACE: what a participant can do after this session; list in lo the course outcomes it serves"
-          ],
-          "lo": [],
-          "lab": {
-            "id": "1.3",
-            "title": "REPLACE: what participants build in lab 1.3",
-            "summary": "REPLACE: one line on what participants build and take away; then list the steps of the lab in course.json, their minutes adding up to 25",
-            "minutes": 25,
-            "href": "D1_3.ipynb"
-          }
-        },
-        {
-          "title": "REPLACE: the title of Session 4",
-          "outcomes": [
-            "REPLACE: what a participant can do after this session; list in lo the course outcomes it serves"
-          ],
-          "lo": [],
-          "lab": {
-            "id": "1.4",
-            "title": "REPLACE: what participants build in lab 1.4",
-            "summary": "REPLACE: one line on what participants build and take away; then list the steps of the lab in course.json, their minutes adding up to 25",
-            "minutes": 25,
-            "href": "D1_4.ipynb"
+            "title": "Six damaged files",
+            "summary": "Six files from the station team and two charger vendors diagnosed from their bytes and times, repaired, checked against the platform and logged",
+            "minutes": 90,
+            "href": "D1_2_damaged_files.ipynb",
+            "steps": [
+              {
+                "text": "Run the setup cell and look at the six files as bytes",
+                "minutes": 10
+              },
+              {
+                "text": "Write the diagnosis sheet, without an assistant",
+                "minutes": 20
+              },
+              {
+                "text": "Repair the four text files",
+                "minutes": 25
+              },
+              {
+                "text": "Convert Vendor A’s times to UTC",
+                "minutes": 10
+              },
+              {
+                "text": "Convert Vendor B’s times to UTC across the clock change",
+                "minutes": 15
+              },
+              {
+                "text": "Check against the platform and write the repair log",
+                "minutes": 10
+              }
+            ],
+            "stretch": "Guess the code page of a file without being told"
           }
         }
       ]
@@ -136,66 +175,117 @@
     {
       "id": "day2",
       "kind": "day",
-      "title": "REPLACE: the theme of this unit, in a few words",
+      "title": "Interfaces and the boundary",
       "deck": "slides/day2.html",
+      "subtitle": "Pull every record exactly once, then let only a valid batch through",
       "sessions": [
         {
-          "title": "REPLACE: the title of Session 1",
-          "outcomes": [
-            "REPLACE: what a participant can do after this session; list in lo the course outcomes it serves"
+          "title": "Interfaces",
+          "minutes": 155,
+          "lo": [
+            "LO3"
           ],
-          "lo": [],
+          "summary": "Status codes and errors, offset and cursor pagination, rate limits, retries with backoff, raw responses, checkpoints and tokens kept out of code",
+          "outcomes": [
+            "Decide from a status code whether to retry, wait or stop",
+            "Explain why cursor pagination survives inserts that offset pagination does not",
+            "Build a rerunnable pull with raw responses, a checkpoint and idempotent writes"
+          ],
           "lab": {
             "id": "2.1",
-            "title": "REPLACE: what participants build in lab 2.1",
-            "summary": "REPLACE: one line on what participants build and take away; then list the steps of the lab in course.json, their minutes adding up to 25",
-            "minutes": 25,
-            "href": "D2_1.ipynb"
+            "title": "Every record, exactly once",
+            "summary": "A client for the mock charge-point platform API that follows cursors, retries with backoff, keeps raw pages and resumes from a checkpoint, then a polite pull of a public open-data API",
+            "minutes": 100,
+            "href": "D2_1_api_client.ipynb",
+            "steps": [
+              {
+                "text": "Run the setup cell, read the API’s terms and load the token from the environment",
+                "minutes": 10
+              },
+              {
+                "text": "Fetch one page by hand: status, body and cursor",
+                "minutes": 10
+              },
+              {
+                "text": "Write fetch_all: follow the cursor, keep raw pages, checkpoint",
+                "minutes": 25
+              },
+              {
+                "text": "Add retries: Retry-After on 429, backoff with jitter on 5xx, stop on other errors",
+                "minutes": 20
+              },
+              {
+                "text": "Interrupt the run, resume it, and prove every record arrived exactly once",
+                "minutes": 10
+              },
+              {
+                "text": "Page the offset endpoint and find what it repeats and misses",
+                "minutes": 10
+              },
+              {
+                "text": "Read a public open-data API’s licence, then pull every page politely",
+                "minutes": 15
+              }
+            ],
+            "stretch": "Make the public pull resumable with the same checkpoint idea"
           }
         },
         {
-          "title": "REPLACE: the title of Session 2",
-          "outcomes": [
-            "REPLACE: what a participant can do after this session; list in lo the course outcomes it serves"
+          "title": "Schema and validation",
+          "minutes": 150,
+          "lo": [
+            "LO4",
+            "LO5"
           ],
-          "lo": [],
+          "summary": "Nested JSON flattened to typed tables, declared types, ranges and keys, partitioned Parquet, and failing a load versus quarantining rows",
+          "outcomes": [
+            "Flatten nested records into one table per grain, keys carried down",
+            "Declare a schema and prove the written files match it",
+            "Decide per batch whether to load, quarantine rows or reject, and report why"
+          ],
           "lab": {
             "id": "2.2",
-            "title": "REPLACE: what participants build in lab 2.2",
-            "summary": "REPLACE: one line on what participants build and take away; then list the steps of the lab in course.json, their minutes adding up to 25",
-            "minutes": 25,
-            "href": "D2_2.ipynb"
-          }
-        },
-        {
-          "title": "REPLACE: the title of Session 3",
-          "outcomes": [
-            "REPLACE: what a participant can do after this session; list in lo the course outcomes it serves"
-          ],
-          "lo": [],
-          "lab": {
-            "id": "2.3",
-            "title": "REPLACE: what participants build in lab 2.3",
-            "summary": "REPLACE: one line on what participants build and take away; then list the steps of the lab in course.json, their minutes adding up to 25",
-            "minutes": 25,
-            "href": "D2_3.ipynb"
-          }
-        },
-        {
-          "title": "REPLACE: the title of Session 4",
-          "outcomes": [
-            "REPLACE: what a participant can do after this session; list in lo the course outcomes it serves"
-          ],
-          "lo": [],
-          "lab": {
-            "id": "2.4",
-            "title": "REPLACE: what participants build in lab 2.4",
-            "summary": "REPLACE: one line on what participants build and take away; then list the steps of the lab in course.json, their minutes adding up to 25",
-            "minutes": 25,
-            "href": "D2_4.ipynb"
+            "title": "Flatten, write, validate",
+            "summary": "Raw API pages turned into typed session and reading tables written as Parquet partitioned by day, then five batches validated with JSON Schema and Pandera: loaded, quarantined or rejected",
+            "minutes": 90,
+            "href": "D2_2_flatten_validate.ipynb",
+            "steps": [
+              {
+                "text": "Run the setup cell; check every raw record against the JSON Schema",
+                "minutes": 15
+              },
+              {
+                "text": "Flatten the records into a sessions table and a readings table",
+                "minutes": 20
+              },
+              {
+                "text": "Cast to the declared schema, write Parquet partitioned by day, check what was written",
+                "minutes": 15
+              },
+              {
+                "text": "Declare the table checks with Pandera",
+                "minutes": 15
+              },
+              {
+                "text": "Validate the five batches: load, quarantine or reject, and write the report",
+                "minutes": 20
+              },
+              {
+                "text": "Read the quarantine file as a station owner would",
+                "minutes": 5
+              }
+            ],
+            "stretch": "Add an optional field to the schema (version 2) and show that version-1 batches still pass"
           }
         }
       ]
+    },
+    {
+      "id": "capstone",
+      "kind": "capstone",
+      "title": "Live ingestion run",
+      "deck": "slides/capstone.html",
+      "subtitle": "Each participant runs the ingestion script live on a batch the assessor generates, then answers questions"
     }
   ],
   "labs": {
@@ -233,8 +323,150 @@
     }
   ],
   "checks": {
-    "sessions_per_day": 4,
+    "sessions_per_day": 2,
     "session_lab": true,
-    "lab_minutes": 25
-  }
+    "lab_minutes": null
+  },
+  "capstone": {
+    "summary": "A checked ingestion script, run live on a batch the assessor supplies",
+    "submission": "An individual task, submitted as a public GitHub repository link within two weeks of the workshop: the ingestion script, its declared schemas, a README with its rules and how to run it, and the report of a run on the practice batch. No token, key or .env file in the repository. The live run uses a batch the assessor generates on the day from a seed of their choice.",
+    "talk_minutes": 6,
+    "qa_minutes": 5,
+    "rubric": [
+      {
+        "criterion": "Every input read correctly: encodings and times normalised to UTF-8 and UTC, each repair logged",
+        "weight": 20
+      },
+      {
+        "criterion": "Typed, partitioned output whose written schema matches the declared one",
+        "weight": 15
+      },
+      {
+        "criterion": "Record and table checks applied with stated rules: load, quarantine or reject",
+        "weight": 20
+      },
+      {
+        "criterion": "Rerunnable: a second run on the same batch gives the same files, the input kept untouched",
+        "weight": 10
+      },
+      {
+        "criterion": "A report and quarantine file the data owner can act on; no token in the repository",
+        "weight": 10
+      },
+      {
+        "criterion": "Live run: the assessor’s batch loaded or rejected for the correct reasons, and explained",
+        "weight": 25
+      }
+    ]
+  },
+  "sources": [
+    {
+      "group": "National references",
+      "items": [
+        {
+          "title": "National Data Management Office: Open Data Policy (National Data Governance Policies, version 1, 5/5/2020)",
+          "url": "https://sdaia.gov.sa/en/SDAIA/about/Documents/OpenDataPolicy.pdf"
+        },
+        {
+          "title": "مكتب إدارة البيانات الوطنية: سياسة البيانات المفتوحة",
+          "url": "https://sdaia.gov.sa/ar/SDAIA/about/Documents/OpenDataPolicyAr.pdf"
+        },
+        {
+          "title": "SDAIA: Regulations and policies (index page)",
+          "url": "https://sdaia.gov.sa/en/SDAIA/about/Pages/RegulationsAndPolicies.aspx"
+        }
+      ]
+    },
+    {
+      "group": "Formats and standards",
+      "items": [
+        {
+          "title": "RFC 4180: Common Format and MIME Type for Comma-Separated Values (CSV) Files",
+          "url": "https://www.rfc-editor.org/rfc/rfc4180"
+        },
+        {
+          "title": "RFC 8259: The JavaScript Object Notation (JSON) Data Interchange Format",
+          "url": "https://www.rfc-editor.org/rfc/rfc8259"
+        },
+        {
+          "title": "JSON Lines",
+          "url": "https://jsonlines.org/"
+        },
+        {
+          "title": "RFC 3339: Date and Time on the Internet: Timestamps",
+          "url": "https://www.rfc-editor.org/rfc/rfc3339"
+        },
+        {
+          "title": "RFC 9110: HTTP Semantics (status codes, Retry-After)",
+          "url": "https://www.rfc-editor.org/rfc/rfc9110"
+        },
+        {
+          "title": "RFC 6585: Additional HTTP Status Codes (429 Too Many Requests)",
+          "url": "https://www.rfc-editor.org/rfc/rfc6585"
+        },
+        {
+          "title": "Apache Parquet: file format documentation",
+          "url": "https://parquet.apache.org/docs/file-format/"
+        },
+        {
+          "title": "Python documentation: zoneinfo, IANA time zone support (fold and ambiguous times)",
+          "url": "https://docs.python.org/3/library/zoneinfo.html"
+        },
+        {
+          "title": "Python documentation: codecs, standard encodings (cp1256, utf-8-sig, utf-16)",
+          "url": "https://docs.python.org/3/library/codecs.html#standard-encodings"
+        }
+      ]
+    },
+    {
+      "group": "Tools (examples of each slot)",
+      "items": [
+        {
+          "title": "Apache Arrow: Python documentation (pyarrow, datasets and partitioning)",
+          "url": "https://arrow.apache.org/docs/python/"
+        },
+        {
+          "title": "DuckDB: reading Parquet files",
+          "url": "https://duckdb.org/docs/stable/data/parquet/overview"
+        },
+        {
+          "title": "HTTPX",
+          "url": "https://www.python-httpx.org/"
+        },
+        {
+          "title": "Requests",
+          "url": "https://requests.readthedocs.io/"
+        },
+        {
+          "title": "JSON Schema: specification (draft 2020-12)",
+          "url": "https://json-schema.org/specification"
+        },
+        {
+          "title": "Pandera documentation",
+          "url": "https://pandera.readthedocs.io/"
+        },
+        {
+          "title": "FastAPI: testing with TestClient",
+          "url": "https://fastapi.tiangolo.com/tutorial/testing/"
+        }
+      ]
+    },
+    {
+      "group": "The public open-data API of lab 2.1",
+      "items": [
+        {
+          "title": "World Bank: API basic call structures (page and per_page)",
+          "url": "https://datahelpdesk.worldbank.org/knowledgebase/articles/898581-api-basic-call-structures"
+        },
+        {
+          "title": "World Bank: terms of use for datasets (CC BY 4.0 unless labelled otherwise)",
+          "url": "https://www.worldbank.org/ext/en/legal/terms-conditions/datasets"
+        },
+        {
+          "title": "World Bank Data Catalog: public licenses",
+          "url": "https://datacatalog.worldbank.org/public-licenses"
+        }
+      ]
+    }
+  ]
 }

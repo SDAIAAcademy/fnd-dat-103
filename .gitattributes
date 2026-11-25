@@ -13,3 +13,8 @@
 *.docx binary
 *.pptx binary
 *.parquet binary
+
+# The damaged files of lab 1.2 are faulty on purpose, byte for byte (legacy code page, UTF-16,
+# CRLF line endings): git must never convert them
+labs/data/damaged/** -text
+labs/capstone/practice/** -text

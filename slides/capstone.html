@@ -1,0 +1,116 @@
+<section class="slide title" id="title" data-auto="title">
+  <aside class="notes"><p>The capstone session, after the tracked follow-up task: groups of eight, 120 minutes. Before it, check that each participant's public repository link opens and holds the script, its schemas, a README and the report of a practice run, and that no token, key or .env file is in it. Generate one unseen batch per participant with labs/capstone/make_batch.py and a seed of your own; keep the keys on your machine.</p></aside>
+</section>
+
+<section class="slide" data-label="Agenda" id="agenda">
+  <div class="kicker">The capstone session</div>
+  <h2>Two hours for eight live runs</h2>
+  <div class="agenda">
+    <div class="item now"><div><b>Opening</b><small>The task, the rubric, the running order</small></div></div>
+    <div class="item"><div><b>Eight live runs</b><small>Each: the script on an unseen batch, then questions</small></div></div>
+    <div class="item"><div><b>Close</b><small>What the batches caught, across the group</small></div></div>
+  </div>
+  <aside class="notes"><p>Minute plan: opening 8; eight participants × (live run 6, questions 5, changeover 2) = 104; close 8. Total 120, the capstone hours of the course. The live run is the authenticity evidence: keep to the timers.</p></aside>
+</section>
+
+<section class="slide" data-label="The task" id="the-task" data-lo="LO1 LO2 LO3 LO4 LO5">
+  <div class="kicker">What was asked</div>
+  <h2>A checked ingestion script, run live on a batch you have not seen</h2>
+  <div class="cols cols-2">
+    <ul class="bullets">
+      <li>Reads the register in its real encoding and proves it.</li>
+      <li>Converts the vendor log to UTC, the repeated hour included.</li>
+      <li>Checks every session record and the table rules; loads, quarantines or rejects by stated rules.</li>
+      <li>Writes typed Parquet partitioned by day, a quarantine file and a report.</li>
+      <li>Gives the same files when run twice.</li>
+    </ul>
+    <div class="card c-teal"><h4>Submitted</h4><p class="small mb0">A public GitHub repository link within two weeks of the workshop: script, schemas, README, a practice run's report. No token, key or .env file.</p></div>
+  </div>
+  <aside class="notes"><p>AI-full for the script: an assistant may have written much of it. In the live run the participant explains every decision the script makes; the questions test that. A script that loads a batch it should have rejected fails the passing rule whatever else it does: the capstone batch must be loaded or rejected for the correct reasons.</p></aside>
+</section>
+
+<section class="slide" data-label="Rubric" id="rubric" data-lo="LO1 LO2 LO3 LO4 LO5">
+  <div class="kicker">How the capstone is scored</div>
+  <h2>Six criteria, 100 points</h2>
+  <div class="bars">
+    <div class="row"><span>Every input read right, each repair logged</span><div class="bar c-teal" style="--w:80%"></div><span class="val">20</span></div>
+    <div class="row"><span>Typed, partitioned output matching the declared schema</span><div class="bar c-cyan" style="--w:60%"></div><span class="val">15</span></div>
+    <div class="row"><span>Record and table checks with stated rules</span><div class="bar c-purple" style="--w:80%"></div><span class="val">20</span></div>
+    <div class="row"><span>Rerunnable, input untouched</span><div class="bar c-amber" style="--w:40%"></div><span class="val">10</span></div>
+    <div class="row"><span>A report the owner can act on; no token</span><div class="bar c-green" style="--w:40%"></div><span class="val">10</span></div>
+    <div class="row"><span>Live run: the right decision, explained</span><div class="bar c-coral" style="--w:100%"></div><span class="val">25</span></div>
+  </div>
+  <div class="callout tip small mt"><b>Weights in the course:</b> lab outputs 40%, supervised check 20%, capstone script and report 30%, live run 10%. Pass: 70% overall, with the capstone batch loaded or rejected for the correct reasons.</div>
+  <aside class="notes"><p>The rubric scores only the capstone's 40%: the first five criteria are the script and report (75 of 100, the 30%), the last is the live run (25 of 100, the 10%). Labs and the supervised check are scored apart, so nothing is counted twice. Each criterion looks at something the others do not.</p></aside>
+</section>
+
+<section class="slide" data-label="Format" id="run-format">
+  <div class="kicker">Each live run</div>
+  <h2>Six minutes to run and explain, five for questions</h2>
+  <div class="cols cols-3">
+    <div class="card c-teal"><h4>6 min · the run</h4><p class="small mb0">The assessor hands over a batch folder. Run the script on it, open the report, say what it decided and why.</p></div>
+    <div class="card c-cyan"><h4>5 min · questions</h4><p class="small mb0">The assessor asks about one decision, one repair and one rule, from the key in front of them.</p></div>
+    <div class="card c-coral"><h4>2 min · changeover</h4><p class="small mb0">The next participant shares their screen and opens a terminal.</p></div>
+  </div>
+  <aside class="notes"><p>The assessor generates the batch, not the participant: that is the separation between who builds and who checks. Compare the report with the key: decision, defects, the register's encoding and the vendor log's UTC times. The trainer's reference script, labs/solutions/capstone_ingest.py, matches the key on every seed tried while building the course (seeds 1 to 12, 42, 77 and 100).</p></aside>
+</section>
+
+<section class="slide order" data-label="Running order" id="running-order">
+  <div class="kicker">Running order</div>
+  <h2>Who runs when, on which batch</h2>
+  <table class="t small">
+    <tr><th>#</th><th>Participant</th><th>Repository</th><th>Batch seed</th></tr>
+    <tr><td>1</td><td><input placeholder="Name"></td><td><input placeholder="Repository"></td><td><input placeholder="Seed"></td></tr>
+    <tr><td>2</td><td><input placeholder="Name"></td><td><input placeholder="Repository"></td><td><input placeholder="Seed"></td></tr>
+    <tr><td>3</td><td><input placeholder="Name"></td><td><input placeholder="Repository"></td><td><input placeholder="Seed"></td></tr>
+    <tr><td>4</td><td><input placeholder="Name"></td><td><input placeholder="Repository"></td><td><input placeholder="Seed"></td></tr>
+    <tr><td>5</td><td><input placeholder="Name"></td><td><input placeholder="Repository"></td><td><input placeholder="Seed"></td></tr>
+    <tr><td>6</td><td><input placeholder="Name"></td><td><input placeholder="Repository"></td><td><input placeholder="Seed"></td></tr>
+    <tr><td>7</td><td><input placeholder="Name"></td><td><input placeholder="Repository"></td><td><input placeholder="Seed"></td></tr>
+    <tr><td>8</td><td><input placeholder="Name"></td><td><input placeholder="Repository"></td><td><input placeholder="Seed"></td></tr>
+  </table>
+  <aside class="notes"><p>Fill before the session. Mix the seeds so the group sees every kind of batch: a clean one, one with a few defects, a changed field, and one with too many defects (the scenario follows the seed's remainder by four; the key names it). Thirteen minutes per slot.</p></aside>
+</section>
+
+<section class="slide dark presenting" data-label="Now presenting" id="now-presenting">
+  <div class="kicker center">Now running</div>
+  <div class="center"><input placeholder="Name and batch seed"></div>
+  <div class="timers mt">
+    <div><h3>Live run</h3><div class="timer" data-minutes="6"></div></div>
+    <div><h3>Questions</h3><div class="timer" data-minutes="5"></div></div>
+  </div>
+  <aside class="notes"><p>Press T to start the first timer. Questions to ask: which rule decided this batch, and where is it written? How did the script know the register's encoding, and what would it do with a third one? Run it again: did any file change? Who receives the quarantine file, and who may release a row from it?</p></aside>
+</section>
+
+<section class="slide" data-label="Peer feedback" id="peer-feedback">
+  <div class="kicker">While others run</div>
+  <h2>Write one line for each run</h2>
+  <ul class="bullets">
+    <li>The check you will copy into your own script.</li>
+    <li>A decision the script made that you would make differently, and why.</li>
+    <li>One thing the report should tell the data owner that it did not.</li>
+  </ul>
+  <aside class="notes"><p>Collect the lines in the session's chat; they are feedback, not scores. The rubric score is the assessor's.</p></aside>
+</section>
+
+<section class="slide" data-label="Review" id="review">
+  <div class="kicker">After the runs</div>
+  <h2>What eight unseen batches showed</h2>
+  <div class="cols cols-3">
+    <div class="card c-teal"><h4>Encodings</h4><p class="small mb0">Which scripts guessed the register's encoding, and which proved it with the Arabic it must contain?</p></div>
+    <div class="card c-cyan"><h4>Time</h4><p class="small mb0">Did every script place the repeated hour right, or only those that used the sequence?</p></div>
+    <div class="card c-coral"><h4>Decisions</h4><p class="small mb0">Which rule was hardest to state: the changed field, or the share above which a batch is rejected?</p></div>
+  </div>
+  <aside class="notes"><p>Eight minutes. Compare across the group: this is the first time each kind of batch has been seen by everyone. Thresholds such as 5% are the case organisation's own rules: what matters is that they are written down and applied the same way every time.</p></aside>
+</section>
+
+<section class="slide" data-label="What next" id="what-next">
+  <div class="kicker">What next</div>
+  <h2>Keep the checks at the boundary, and take them further</h2>
+  <ul class="bullets">
+    <li><b>Re-check names and versions</b> of the libraries yearly: readers' defaults and format features change.</li>
+    <li><b>Data contracts:</b> DEV-DAT-204 Data Quality, Contracts and Observability adds versions, service levels and lineage to the checks built here.</li>
+    <li><b>Relational loads:</b> FND-DAT-101 SQL and Relational Data loads files into constrained tables with a load log.</li>
+  </ul>
+  <aside class="notes"><p>Certificate: completion with assessed work. Record the lab outputs, the supervised check and the capstone score with the programme office after the session.</p></aside>
+</section>
