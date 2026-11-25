@@ -11,7 +11,8 @@ folder and keeps the key. From labs/:
 
 The seed is the assessor's secret: the scenario, the encoding and the ids are all drawn from it at
 random, so nothing in the batch reveals it. Hand the batch over by its letter (--label), not by
-the seed. Every kind of batch comes up across a few seeds; read the scenario in each key and draw
+the seed. Use a large seed of your own (eight digits or more, never 1 to 100): participants hold this
+script and could generate small seeds in advance and match the files. Every kind of batch comes up across a few seeds; read the scenario in each key and draw
 another seed if the group lacks one.
 
 The batch folder holds three files:

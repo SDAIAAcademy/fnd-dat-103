@@ -1,5 +1,5 @@
 <section class="slide title" id="title" data-auto="title">
-  <aside class="notes"><p>Welcome. Ask the room: who has opened a file and found Arabic turned into question marks, or a time that was three hours off? Most hands go up; that is today. Day 1 is files: two sessions, each with a long lab. Day 2 is interfaces and the checks at the boundary. Labs are AI-tutor: an assistant may explain, you write the code. The pre-work and the supervised check at the end of Day 2 are AI-off.</p></aside>
+  <aside class="notes"><p>Welcome. Ask the room: who has opened a file and found Arabic turned into question marks, or a time that was three hours off? Most hands go up; that is today. Day 1 is files: two sessions, each with a long lab. Day 2 is interfaces and the checks at the boundary. Labs are AI-tutor: an assistant may explain, you write the code. The pre-work and the supervised check at the end of Day 2 are AI-off.</p><p>Open from the pre-work: ask two people for their answer to drill item 4 (the semicolon line) and one for item 1 (the three bytes). Their answers lead into the dialect slide and session 2; settle disagreements there, not now.</p></aside>
 </section>
 
 <section class="slide" id="agenda" data-auto="agenda"></section>
@@ -118,7 +118,7 @@ day=2026-10-21/part-0.parquet
 
 <section class="slide" id="arrow-interchange" data-lo="LO1">
   <div class="kicker">In memory</div>
-  <h2>Arrow lets two tools share a table without copying it</h2>
+  <h2>Arrow lets two tools share a table in memory, with no file between them</h2>
   <pre class="code" data-file="interchange.py"><code class="language-python">import duckdb, pyarrow.parquet as pq
 
 loans = pq.read_table("loans.parquet",
@@ -261,10 +261,10 @@ pd.read_csv("grades.csv",
   <h2>Daylight saving skips one hour in spring and repeats one in autumn</h2>
   <div class="cols cols-2">
     <div class="card c-cyan"><h4>Spring: a missing hour</h4><p class="small mb0">In the <code>CET</code> zone, on 29 March 2026, clocks jump from <time>02:00</time> to <time>03:00</time>. A log line at <time>02:30</time> names a time that never happened there.</p></div>
-    <div class="card c-coral"><h4>Autumn: a repeated hour</h4><p class="small mb0">In the <code>EET</code> zone, on 25 October 2026, <time>03:30</time> happens twice: first at <time>00:30</time> UTC, then at <time>01:30</time> UTC.</p></div>
+    <div class="card c-coral"><h4>Autumn: a repeated hour</h4><p class="small mb0">In the <code>EET</code> zone, on 26 October 2025, <time>03:30</time> happens twice: first at <time>00:30</time> UTC, then at <time>01:30</time> UTC.</p></div>
   </div>
   <div class="callout note mt"><b>In Python.</b> <code>zoneinfo</code> marks the second pass of a repeated time with <code>fold=1</code>. Without another clue, such as the order of events, nobody can tell which pass a bare time meant.</div>
-  <aside class="notes"><p>Run it: datetime(2026, 10, 25, 3, 30, tzinfo=ZoneInfo("EET"), fold=0) has offset +3, fold=1 has +2. Ask what clue would tell the passes apart in a log: a sequence number, an event counter, or the previous line's time. Lab 1.2 meets this with another zone and another vendor. Python compares two times of the same zone by their clock reading and ignores fold: convert to UTC before comparing.</p><p>Sources: Python documentation, zoneinfo (fold); the IANA time-zone database through the tzdata package.</p></aside>
+  <aside class="notes"><p>Run it: datetime(2025, 10, 26, 3, 30, tzinfo=ZoneInfo("EET"), fold=0) has offset +3, fold=1 has +2. Ask what clue would tell the passes apart in a log: a sequence number, an event counter, or the previous line's time. Lab 1.2 meets this with another zone and another vendor. Python compares two times of the same zone by their clock reading and ignores fold: convert to UTC before comparing.</p><p>Sources: Python documentation, zoneinfo (fold); the IANA time-zone database through the tzdata package.</p></aside>
 </section>
 
 <section class="slide" id="symptoms" data-lo="LO2">

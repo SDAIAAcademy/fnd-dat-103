@@ -161,8 +161,8 @@ client = httpx.Client(headers=auth)</code></pre>
   <div class="quiz" data-type="single" data-lo="LO3">
     <p class="lead">A pull from a weather-station network's API gets these four answers on different pages. Which one should it retry after a wait, with no change to the request?</p>
     <div class="opts">
-      <div class="opt" data-why="Treats a client error as temporary: a malformed parameter fails the same way every time">400 Bad Request: "limit must be at most 200"</div>
       <div class="opt" data-ok>503 Service Unavailable</div>
+      <div class="opt" data-why="Treats a client error as temporary: a malformed parameter fails the same way every time">400 Bad Request: "limit must be at most 200"</div>
       <div class="opt" data-why="Treats an authorisation failure as temporary: retrying a bad token adds load and may lock it">401 Unauthorized</div>
       <div class="opt" data-why="Treats a missing resource as an outage: the station id does not exist, and asking again will not create it">404 Not Found for one station</div>
     </div>
