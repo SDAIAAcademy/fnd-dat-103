@@ -1,0 +1,142 @@
+{
+ "batch_01": {
+  "decision": "load",
+  "defects": []
+ },
+ "batch_02": {
+  "decision": "load",
+  "defects": [
+   [
+    "CS-20018",
+    "missing_field"
+   ],
+   [
+    "CS-20065",
+    "wrong_type"
+   ],
+   [
+    "CS-20151",
+    "no_offset"
+   ]
+  ]
+ },
+ "batch_03": {
+  "decision": "load",
+  "defects": [
+   [
+    "CS-30041",
+    "duplicate_key"
+   ],
+   [
+    "CS-30078",
+    "out_of_range"
+   ],
+   [
+    "CS-30089",
+    "out_of_range"
+   ],
+   [
+    "CS-30100",
+    "end_before_start"
+   ],
+   [
+    "CS-30134",
+    "unknown_station"
+   ]
+  ]
+ },
+ "batch_04": {
+  "decision": "reject",
+  "defects": [
+   [
+    "*",
+    "schema_break:energy_kwh"
+   ]
+  ]
+ },
+ "batch_05": {
+  "decision": "reject",
+  "defects": [
+   [
+    "CS-50021",
+    "no_offset"
+   ],
+   [
+    "CS-50023",
+    "no_offset"
+   ],
+   [
+    "CS-50024",
+    "no_offset"
+   ],
+   [
+    "CS-50039",
+    "no_offset"
+   ],
+   [
+    "CS-50048",
+    "no_offset"
+   ],
+   [
+    "CS-50051",
+    "no_offset"
+   ],
+   [
+    "CS-50078",
+    "no_offset"
+   ],
+   [
+    "CS-50082",
+    "no_offset"
+   ],
+   [
+    "CS-50091",
+    "no_offset"
+   ],
+   [
+    "CS-50099",
+    "no_offset"
+   ],
+   [
+    "CS-50100",
+    "no_offset"
+   ],
+   [
+    "CS-50104",
+    "no_offset"
+   ],
+   [
+    "CS-50110",
+    "no_offset"
+   ],
+   [
+    "CS-50121",
+    "no_offset"
+   ],
+   [
+    "CS-50129",
+    "no_offset"
+   ],
+   [
+    "CS-50139",
+    "no_offset"
+   ],
+   [
+    "CS-50170",
+    "no_offset"
+   ],
+   [
+    "CS-50185",
+    "no_offset"
+   ],
+   [
+    "CS-50190",
+    "no_offset"
+   ],
+   [
+    "CS-50192",
+    "no_offset"
+   ]
+  ]
+ }
+}

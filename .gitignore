@@ -35,3 +35,5 @@ __pycache__/
 Thumbs.db
 /*.log
 labs/out/
+# uv writes its lock file on first sync; it is not part of the course (package hashes and sizes)
+labs/uv.lock

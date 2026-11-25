@@ -1,158 +1,336 @@
 <section class="slide title" id="title" data-auto="title">
-  <aside class="notes">REPLACE: welcome; introduce yourself; one question to the room that calibrates the pace; the rhythm of the day</aside>
+  <aside class="notes"><p>Welcome. Ask the room: who has opened a file and found Arabic turned into question marks, or a time that was three hours off? Most hands go up; that is today. Day 1 is files: two sessions, each with a long lab. Day 2 is interfaces and the checks at the boundary. Labs are AI-tutor: an assistant may explain, you write the code. The diagnosis sheet in lab 1.2 is AI-off.</p></aside>
 </section>
 
 <section class="slide" id="agenda" data-auto="agenda"></section>
+
+<section class="slide" id="setup-check">
+  <div class="kicker">Before we start</div>
+  <h2>One notebook proves your setup</h2>
+  <div class="cols cols-2">
+    <ul class="bullets">
+      <li><b>Colab:</b> open <code>labs/00_setup_check.ipynb</code> from the course page; its first cell clones the course and installs the libraries.</li>
+      <li><b>Laptop:</b> from <code>labs/</code>, run <code>uv sync</code>, then open the notebook.</li>
+      <li>Its last line must read <b>PASS · ready for the labs</b>.</li>
+    </ul>
+    <div class="card c-teal"><h4>What it checks</h4><p class="small mb0">pandas, pyarrow, DuckDB, httpx, FastAPI, Pandera, jsonschema and the time-zone database; the case data; one call to the mock API. No lab calls a language model, so no model key is needed.</p></div>
+  </div>
+  <aside class="notes"><p>Give this five minutes while people arrive. Common failures: on Windows, a missing time-zone database (the tzdata package fixes it; it is in the requirements); a corporate proxy blocking the Colab install (use the laptop route). The mock API runs inside the notebook: no port, no server, nothing to open in a firewall.</p></aside>
+</section>
 
 <!-- Session 1 -->
 
 <section class="slide section" id="s1" data-auto="section" data-session="1"></section>
 
-<section class="slide" id="s1-idea">
-  <div class="kicker">REPLACE: the question this slide answers</div>
-  <h2>REPLACE: one idea, stated as a sentence</h2>
-  <div class="cols cols-2">
-    <ul class="bullets">
-      <li>REPLACE: at most six bullets, each a complete thought</li>
-      <li>REPLACE: bold the key phrase; numbers come from the lab run, not from memory</li>
-    </ul>
-    <div class="card c-teal"><h4>In the case study</h4><p class="small mb0">REPLACE: tie the idea to the case study and its data</p></div>
+<section class="slide" id="four-shapes" data-lo="LO1">
+  <div class="kicker">The case</div>
+  <h2>Charging sessions reach the data team in four shapes</h2>
+  <div class="cols cols-4">
+    <div class="card c-teal"><h4>Charger logs</h4><p class="small mb0">Text files from Vendor A and Vendor B chargers, one line per session.</p></div>
+    <div class="card c-cyan"><h4>Legacy exports</h4><p class="small mb0">The station team's old asset system: registers and notes in Arabic.</p></div>
+    <div class="card c-purple"><h4>Platform API</h4><p class="small mb0">The charge-point platform's pages of nested JSON.</p></div>
+    <div class="card c-amber"><h4>Analysts' tables</h4><p class="small mb0">What finance and operations read: typed, partitioned, checked.</p></div>
   </div>
-  <div class="callout warn mt"><b>What goes wrong.</b> REPLACE: the failure participants will hit, and how to recognise it</div>
-  <aside class="notes">REPLACE: what to say, the demo to run, the question to ask the room, the common failure and its fix</aside>
+  <p class="lead mt">The charging network runs 40 fictional stations in one unnamed city. Every file in this course is synthetic.</p>
+  <aside class="notes"><p>Introduce the roles, not people: the data team lead chooses formats, the operations analyst pulls from the API, the finance controller reads the tables, the station team owns the register. The course follows the data from left to right: today the first two shapes, tomorrow the last two.</p></aside>
 </section>
 
-<section class="slide" id="s1-steps">
-  <div class="kicker">Step by step</div>
-  <h2>REPLACE: a process, shown one step per key press</h2>
-  <div class="flow">
-    <div class="step c-teal"><b>1 · REPLACE: name</b>REPLACE: what happens first</div>
-    <div class="arrow frag" data-frag="b">→</div><div class="step c-cyan frag" data-frag="b"><b>2 · REPLACE: name</b>REPLACE: the next piece</div>
-    <div class="arrow frag" data-frag="c">→</div><div class="step c-coral frag" data-frag="c"><b>3 · REPLACE: name</b>REPLACE: the result</div>
+<section class="slide" id="format-promises" data-lo="LO1">
+  <div class="kicker">What a format promises</div>
+  <h2>A format decides what survives the trip</h2>
+  <table class="t small">
+    <tr><th>Promise</th><th>Delimited (CSV)</th><th>JSON Lines</th><th>Columnar (Parquet)</th></tr>
+    <tr><td>Types travel with the data</td><td>No: all text</td><td>A few: string, number, true/false, null</td><td>Yes, in the file's schema</td></tr>
+    <tr><td>Nested values</td><td>No</td><td>Yes</td><td>Yes</td></tr>
+    <tr><td>Append one record</td><td>Yes</td><td>Yes, one line</td><td>No: write a new file</td></tr>
+    <tr><td>Read only some columns</td><td>No</td><td>No</td><td>Yes</td></tr>
+    <tr><td>Readable in a text editor</td><td>Yes</td><td>Yes</td><td>No</td></tr>
+  </table>
+  <aside class="notes"><p>Do not announce a winner: each row is a trade. Ask: which of these does a charger, appending one session at a time, care about? (Append.) Which does an analyst summing a month care about? (Types, columns.) Lab 1.1 measures what the table claims.</p><p>Sources: RFC 4180; RFC 8259 and jsonlines.org; the Apache Parquet file format documentation.</p></aside>
+</section>
+
+<section class="slide" id="csv-dialect" data-lo="LO1">
+  <div class="kicker">Delimited files</div>
+  <h2>A CSV without its dialect is half a file</h2>
+  <div class="cols cols-2">
+    <pre class="code" data-file="payroll_export.csv"><code>staff_code;grade;allowance;note
+0042;B2;1250,50;"ترقية، ""مؤقتة"""
+0107;A1;980,00;</code></pre>
+    <ul class="bullets">
+      <li><b>Delimiter:</b> here a semicolon, because the comma is the decimal mark.</li>
+      <li><b>Quoting:</b> a field holding the delimiter or a quote is enclosed in quotes; an inner quote is doubled.</li>
+      <li><b>Encoding and line ending:</b> not in the file; someone must say them.</li>
+      <li><b>Types:</b> not in the file either: "0042" is a code, not 42.</li>
+    </ul>
   </div>
-  <div class="callout tip mt frag"><b>Takeaway.</b> REPLACE: the one sentence to remember</div>
-  <aside class="notes">Press once per step and say what each step adds before the next one appears. REPLACE: the example to walk through</aside>
+  <div class="callout warn mt"><b>What goes wrong.</b> A reader with the default dialect splits the note at its comma and turns the staff code into the number 42.</div>
+  <aside class="notes"><p>This is a parallel example from another department (payroll), not the lab's data. Walk through each setting and ask what pandas would do with defaults: comma delimiter, so one column; then with sep=";" the code becomes an integer unless dtype=str. RFC 4180 writes the quoting rules: fields with commas, quotes or line breaks are enclosed in double quotes; an inner double quote is escaped by another double quote.</p><p>Sources: RFC 4180, section 2.</p></aside>
+</section>
+
+<section class="slide" id="json-lines" data-lo="LO1">
+  <div class="kicker">JSON and JSON Lines</div>
+  <h2>JSON Lines is one record per line, and that changes everything operational</h2>
+  <div class="cols cols-2">
+    <div class="card c-cyan"><h4>One JSON document</h4><p class="small">An array of a million objects: one opening bracket, one closing bracket.</p><p class="small mb0">To add a record, rewrite the file. A cut at byte 900,000 makes the whole file invalid.</p></div>
+    <div class="card c-teal"><h4>JSON Lines</h4><p class="small">One complete JSON value per line, UTF-8, a newline after each.</p><p class="small mb0">Append a line; stream it line by line; a damaged line loses one record, not the file.</p></div>
+  </div>
+  <div class="callout note mt"><b>Still text.</b> Every line repeats every key, and numbers and times are written as text: large on disk, and a reader must parse each value back.</div>
+  <aside class="notes"><p>Ask why chargers and API clients like JSON Lines: they write as they go and can resume. Ask what it costs: size and parsing. Lab 1.1 measures both. The JSON Lines site requires UTF-8 and one valid JSON value per line.</p><p>Sources: RFC 8259; jsonlines.org.</p></aside>
+</section>
+
+<section class="slide" id="columnar" data-lo="LO1">
+  <div class="kicker">Columnar files</div>
+  <h2>A columnar file stores each column together, typed and compressed</h2>
+  <div class="flow">
+    <div class="step c-teal"><b>File</b>a footer with the schema and where everything is</div>
+    <div class="arrow">→</div>
+    <div class="step c-cyan"><b>Row groups</b>blocks of rows, e.g. 100,000 sessions each</div>
+    <div class="arrow">→</div>
+    <div class="step c-purple"><b>Column chunks</b>one per column per row group, with min and max</div>
+    <div class="arrow">→</div>
+    <div class="step c-amber"><b>Pages</b>encoded and compressed values</div>
+  </div>
+  <ul class="bullets mt">
+    <li>A query that needs two columns reads two chunks per row group, not every byte.</li>
+    <li>Statistics let a reader skip row groups whose range cannot match.</li>
+    <li>Similar values side by side compress well: codes, dates, small numbers.</li>
+  </ul>
+  <aside class="notes"><p>Draw the contrast with a row file: to sum energy in a CSV you read every field of every line. Parquet's footer is why a reader knows the types without guessing. Keep the vocabulary: row group, column chunk, page, footer. Source: Apache Parquet file format documentation.</p></aside>
+</section>
+
+<section class="slide" id="partitions" data-lo="LO1">
+  <div class="kicker">Partitions</div>
+  <h2>A partition is a folder per value, so a reader opens only what it needs</h2>
+  <div class="cols cols-2">
+    <pre class="code" data-file="tables/sessions/"><code>day=2026-10-19/part-0.parquet
+day=2026-10-20/part-0.parquet
+day=2026-10-21/part-0.parquet
+...</code></pre>
+    <ul class="bullets">
+      <li>The value lives in the folder name (the "hive" style), not inside the files.</li>
+      <li>A query for one day reads one folder.</li>
+      <li>Choose a column people filter on, with tens to hundreds of values, not millions.</li>
+    </ul>
+  </div>
+  <div class="callout warn mt"><b>What goes wrong.</b> Partitioning by session id writes one tiny file per session: thousands of files and slower reads.</div>
+  <aside class="notes"><p>Ask which column the finance controller filters on most: the day, or the month. Station is a candidate too (40 values). The stretch of lab 1.1 writes this layout and lab 2.2 uses it for real. Source: Apache Arrow Python documentation, datasets and partitioning.</p></aside>
+</section>
+
+<section class="slide" id="arrow-interchange" data-lo="LO1">
+  <div class="kicker">In memory</div>
+  <h2>Arrow lets two tools share a table without copying it</h2>
+  <pre class="code" data-file="interchange.py"><code class="language-python">import duckdb, pyarrow.parquet as pq
+
+loans = pq.read_table("loans.parquet", columns=["branch", "items"])
+duckdb.sql("SELECT branch, sum(items) FROM loans GROUP BY branch")</code></pre>
+  <ul class="bullets mt">
+    <li>Arrow is a columnar layout in memory, as Parquet is on disk.</li>
+    <li>DuckDB finds the Python variable <code>loans</code> and scans its columns in place.</li>
+    <li>No CSV in between: the types arrive as they left.</li>
+  </ul>
+  <aside class="notes"><p>Parallel example: a library's loans table, not the charging data. Run it live if you have a Parquet file at hand; otherwise show it and let lab 1.1 do it. Point out the column selection at read time: the other columns are never read from disk. Sources: Apache Arrow Python documentation; DuckDB documentation on Parquet.</p></aside>
+</section>
+
+<section class="slide" id="measure-fairly" data-lo="LO1">
+  <div class="kicker">Measuring</div>
+  <h2>Compare formats on three measures, taken the same way</h2>
+  <div class="cols cols-3">
+    <div class="card c-teal"><h4>Size</h4><p class="small mb0">Bytes on disk. Stable: the same data gives the same size.</p></div>
+    <div class="card c-cyan"><h4>Read time</h4><p class="small mb0">The median of several reads on one machine. It moves with the machine, the cache and the run.</p></div>
+    <div class="card c-coral"><h4>Type fidelity</h4><p class="small mb0">Column by column: same type and same values after a round trip with default readers.</p></div>
+  </div>
+  <div class="callout warn mt"><b>What goes wrong.</b> One timing quoted as a property of a format. Report the machine and the median, and trust sizes and fidelity more than seconds.</div>
+  <aside class="notes"><p>"Default readers" is deliberate: it is what a colleague will do with your file. Fidelity means equal values, not "looks the same when printed": a difference in the fifteenth decimal place breaks an equality check and a hash. Leave the finding for the lab.</p></aside>
+</section>
+
+<section class="slide" id="check-formats" data-lo="LO1">
+  <div class="kicker">Checkpoint</div>
+  <h2>Which hand-over keeps the codes intact?</h2>
+  <div class="quiz" data-type="single" data-lo="LO1">
+    <p class="lead">A library sends loan records with branch codes like "007" to analysts who read files with default settings. Which hand-over keeps "007" as "007"?</p>
+    <div class="opts">
+      <div class="opt" data-why="Assumes quoting protects type: quotes protect delimiters, and a default reader still turns the field into the number 7">A CSV with every field in quotes</div>
+      <div class="opt" data-ok>A Parquet file with the code declared as a string</div>
+      <div class="opt" data-why="Assumes JSON Lines keeps every type: default readers may still infer a number from a numeric-looking string">A JSON Lines file with default reader settings</div>
+      <div class="opt" data-why="Treats the delimiter as the problem: a semicolon changes the split, not the type a reader infers">A semicolon-separated file in UTF-8</div>
+    </div>
+    <div class="callout tip why"><b>Why.</b> Only a format that carries its schema tells the reader the column is text; every other choice leaves the type to the reader's guess.</div>
+  </div>
+  <aside class="notes"><p>Answer: Parquet with a declared string column. If many choose the quoted CSV, write "007" in a cell and read it back with pandas defaults on the projector: the quotes are gone, so is the type. The lab shows what JSON Lines does to such codes.</p></aside>
 </section>
 
 <section class="slide lab" id="lab-1-1" data-auto="lab" data-lab="1.1">
-  <aside class="notes">REPLACE: what to watch for while participants work, the typical problems, and the fallback for anyone who did not finish an earlier lab</aside>
+  <aside class="notes"><p>AI-tutor. Walk the room at task 4: the fidelity function trips people on the cast (a failed cast must count as a loss, not crash). Read times differ between laptops: that is the point of the "measure fairly" slide. Quick mode (FDT103_QUICK=1) uses 20,000 rows for slow laptops. Expected findings are in labs/solutions/answer_key.md. Debrief from the participants' own tables, then the next slide.</p></aside>
+</section>
+
+<section class="slide" id="formats-debrief" data-lo="LO1">
+  <div class="kicker">Debrief of lab 1.1</div>
+  <h2>Parquet kept 11 of 11 columns; CSV kept 7, JSON Lines 6</h2>
+  <table class="t small">
+    <tr><th>Format</th><th class="num">Size</th><th class="num">Median read</th><th>Lost with default readers</th></tr>
+    <tr><td>CSV</td><td class="num">16,894 KB</td><td class="num">0.030 s</td><td>connector, started_at, status, idle_min</td></tr>
+    <tr><td>JSON Lines</td><td class="num">45,219 KB</td><td class="num">1.149 s</td><td>connector, energy_kwh, amount, status, idle_min</td></tr>
+    <tr class="hl"><td>Parquet (zstd)</td><td class="num">2,562 KB</td><td class="num">0.016 s</td><td>none</td></tr>
+  </table>
+  <p class="caption">The course's reference run: 200,000 synthetic sessions on one laptop. Your seconds will differ; the sizes and losses will not.</p>
+  <aside class="notes"><p>Show this only after the lab. Two findings to draw out: connector "01" became the number 1 in both text formats; JSON Lines changed energy_kwh in 2,069 of 200,000 rows by at most 3.6e-15, because pandas' default JSON float parser is not exact (precise_float=True fixes it). Ask for the recommendation: Parquet to analysts, JSON Lines for an append-only charger log with a schema beside it, CSV only with its dialect and schema written down.</p></aside>
 </section>
 
 <!-- Session 2 -->
 
 <section class="slide section" id="s2" data-auto="section" data-session="2"></section>
 
-<section class="slide" id="s2-idea">
-  <div class="kicker">REPLACE: the question this slide answers</div>
-  <h2>REPLACE: one idea, stated as a sentence</h2>
-  <div class="cols cols-2">
-    <ul class="bullets">
-      <li>REPLACE: at most six bullets, each a complete thought</li>
-      <li>REPLACE: bold the key phrase; numbers come from the lab run, not from memory</li>
-    </ul>
-    <div class="card c-teal"><h4>In the case study</h4><p class="small mb0">REPLACE: tie the idea to the case study and its data</p></div>
-  </div>
-  <div class="callout warn mt"><b>What goes wrong.</b> REPLACE: the failure participants will hit, and how to recognise it</div>
-  <aside class="notes">REPLACE: what to say, the demo to run, the question to ask the room, the common failure and its fix</aside>
+<section class="slide" id="bytes-not-text" data-lo="LO2">
+  <div class="kicker">Bytes and characters</div>
+  <h2>A file holds bytes; text is bytes plus an agreed encoding</h2>
+  <table class="t">
+    <tr><th>The word <span class="ar">سلام</span> in</th><th>Bytes</th><th class="num">Per letter</th></tr>
+    <tr><td>UTF-8</td><td><code>d8 b3 d9 84 d8 a7 d9 85</code></td><td class="num">2</td></tr>
+    <tr><td>Windows-1256 (cp1256)</td><td><code>d3 e1 c7 e3</code></td><td class="num">1</td></tr>
+    <tr><td>ISO-8859-6</td><td><code>d3 e4 c7 e5</code></td><td class="num">1</td></tr>
+    <tr><td>UTF-16 (little-endian, with its mark)</td><td><code>ff fe 33 06 44 06</code> and so on</td><td class="num">2</td></tr>
+  </table>
+  <aside class="notes"><p>Same four letters, four byte sequences. Nothing in the bytes says which table to use: the encoding is an agreement outside the file. UTF-8 is the default everywhere today; the two single-byte code pages survive in old Arabic systems and exports. These bytes were computed with Python's codecs (labs run the same library).</p><p>Sources: Python documentation, codecs, standard encodings.</p></aside>
 </section>
 
-<section class="slide" id="s2-steps">
-  <div class="kicker">Step by step</div>
-  <h2>REPLACE: a process, shown one step per key press</h2>
-  <div class="flow">
-    <div class="step c-teal"><b>1 · REPLACE: name</b>REPLACE: what happens first</div>
-    <div class="arrow frag" data-frag="b">→</div><div class="step c-cyan frag" data-frag="b"><b>2 · REPLACE: name</b>REPLACE: the next piece</div>
-    <div class="arrow frag" data-frag="c">→</div><div class="step c-coral frag" data-frag="c"><b>3 · REPLACE: name</b>REPLACE: the result</div>
+<section class="slide" id="legacy-code-pages" data-lo="LO2">
+  <div class="kicker">Legacy Arabic code pages</div>
+  <h2>Read a legacy file as UTF-8 and it fails; read UTF-8 as legacy and it lies</h2>
+  <div class="cols cols-2">
+    <div class="card c-coral"><h4>cp1256 bytes read as UTF-8</h4><p class="small mb0">A UTF-8 decoder meets single high bytes it cannot use: an error, or <code>����</code> with <code>errors="replace"</code>. Loud, at least.</p></div>
+    <div class="card c-amber"><h4>UTF-8 bytes read as cp1256</h4><p class="small mb0">cp1256 maps every byte to a character, so it never fails: <span class="ar">سلام</span> reads as <span class="ar">ط³ظ„ط§ظ…</span>. Quiet, and wrong.</p></div>
   </div>
-  <div class="callout tip mt frag"><b>Takeaway.</b> REPLACE: the one sentence to remember</div>
-  <aside class="notes">Press once per step and say what each step adds before the next one appears. REPLACE: the example to walk through</aside>
+  <div class="callout warn mt"><b>Saved again, it sticks.</b> Write that wrong text back as UTF-8 and the file is now double-encoded: valid UTF-8, nonsense Arabic. Undo it by reversing the wrong step: encode as cp1256, decode as UTF-8.</div>
+  <aside class="notes"><p>The signature of double-encoded Arabic is runs of two-character pairs that start with the same few letters. Demonstrate in a Python cell: "سلام".encode().decode("cp1256") and back. Ask why the second case is worse: no error, so no one notices until a report shows nonsense names.</p></aside>
+</section>
+
+<section class="slide" id="byte-order-mark" data-lo="LO2">
+  <div class="kicker">Byte order marks</div>
+  <h2>A byte order mark is invisible text at the start of a file</h2>
+  <div class="cols cols-2">
+    <ul class="bullets">
+      <li><code>ef bb bf</code>: the UTF-8 mark, added by some editors and spreadsheet exports.</li>
+      <li><code>ff fe</code> or <code>fe ff</code>: the UTF-16 marks, which say the byte order.</li>
+      <li>Read as plain UTF-8, the mark becomes the character <code>﻿</code> glued to the first column name.</li>
+    </ul>
+    <pre class="code" data-file="python"><code class="language-python">df = pd.read_csv("grades.csv")
+df["student_code"]   # KeyError
+df.columns[0]        # '﻿student_code'
+pd.read_csv("grades.csv", encoding="utf-8-sig")</code></pre>
+  </div>
+  <aside class="notes"><p>Parallel example: a school's grades export. The KeyError on a column you can see is the classic symptom. utf-8-sig removes the mark if present and reads plain UTF-8 otherwise, so it is safe as a default for files from spreadsheet tools. A UTF-16 file shows a zero byte after every ASCII letter.</p></aside>
+</section>
+
+<section class="slide" id="detect-then-confirm" data-lo="LO2">
+  <div class="kicker">Diagnosis</div>
+  <h2>Detection is a guess; confirm it with a word you know</h2>
+  <div class="flow">
+    <div class="step c-teal"><b>1 · Look</b>the first bytes in hex: a mark, zero bytes, single high bytes</div>
+    <div class="arrow">→</div>
+    <div class="step c-cyan"><b>2 · Try</b>decode with the likely encoding</div>
+    <div class="arrow">→</div>
+    <div class="step c-purple"><b>3 · Confirm</b>a value you know must appear, such as a station or branch name</div>
+    <div class="arrow">→</div>
+    <div class="step c-amber"><b>4 · Record</b>the encoding in the load log</div>
+  </div>
+  <div class="callout tip mt"><b>Rule.</b> "It opened without an error" proves nothing for a single-byte code page: every byte decodes to something.</div>
+  <aside class="notes"><p>This is the routine lab 1.2 asks for, file by file, with the diagnosis written before any repair. Encoding-detection libraries exist and are useful, but they return a probability: the confirmation step is still yours.</p></aside>
+</section>
+
+<section class="slide" id="offsets-utc" data-lo="LO2">
+  <div class="kicker">Offsets and UTC</div>
+  <h2>A time without an offset is a guess about someone's clock</h2>
+  <table class="t">
+    <tr><th>Written as</th><th>Means</th></tr>
+    <tr><td><code>2026-11-02T09:00:00+03:00</code></td><td><time>09:00</time> on a clock three hours ahead of UTC</td></tr>
+    <tr><td><code>2026-11-02T06:00:00Z</code></td><td>The same instant, in UTC</td></tr>
+    <tr class="hl"><td><code>2026-11-02 09:00</code></td><td>Unknown: which clock?</td></tr>
+  </table>
+  <ul class="bullets mt">
+    <li>RFC 3339 times carry <code>Z</code> or <code>+hh:mm</code>: the instant is fixed.</li>
+    <li>Store instants in UTC, keep the offset when it matters, convert to local time only to display.</li>
+  </ul>
+  <aside class="notes"><p>The network's local time is UTC+03:00 all year, with no daylight saving. A device configured for another zone, or a developer who assumed UTC, shifts every session by a whole number of hours. Ask: how would you notice? Compare with a source you trust that does carry offsets.</p><p>Sources: RFC 3339, section 5.6.</p></aside>
+</section>
+
+<section class="slide" id="daylight-saving" data-lo="LO2">
+  <div class="kicker">Daylight saving</div>
+  <h2>Daylight saving skips one hour in spring and repeats one in autumn</h2>
+  <div class="cols cols-2">
+    <div class="card c-cyan"><h4>Spring: a missing hour</h4><p class="small mb0">In the <code>CET</code> zone, on 29 March 2026, clocks jump from <time>02:00</time> to <time>03:00</time>. A log line at <time>02:30</time> names a time that never happened there.</p></div>
+    <div class="card c-coral"><h4>Autumn: a repeated hour</h4><p class="small mb0">In the <code>EET</code> zone, on 25 October 2026, <time>03:30</time> happens twice: first at <time>00:30</time> UTC, then at <time>01:30</time> UTC.</p></div>
+  </div>
+  <div class="callout note mt"><b>In Python.</b> <code>zoneinfo</code> marks the second pass of a repeated time with <code>fold=1</code>. Without another clue, such as the order of events, nobody can tell which pass a bare time meant.</div>
+  <aside class="notes"><p>Run it: datetime(2026, 10, 25, 3, 30, tzinfo=ZoneInfo("EET"), fold=0) has offset +3, fold=1 has +2. Ask what clue would tell the passes apart in a log: a sequence number, an event counter, or the previous line's time. Lab 1.2 meets this with another zone and another vendor. Python compares two times of the same zone by their clock reading and ignores fold: convert to UTC before comparing.</p><p>Sources: Python documentation, zoneinfo (fold); the IANA time-zone database through the tzdata package.</p></aside>
+</section>
+
+<section class="slide" id="symptoms" data-lo="LO2">
+  <div class="kicker">From symptom to cause</div>
+  <h2>Each fault leaves its own fingerprint</h2>
+  <table class="t small">
+    <tr><th>You see</th><th>Look for</th></tr>
+    <tr><td>A decode error, or <code>�</code> in place of Arabic</td><td>A single-byte code page read as UTF-8</td></tr>
+    <tr><td>Arabic that reads as pairs of other Arabic letters, no error</td><td>Double encoding</td></tr>
+    <tr><td>A KeyError on a column you can see</td><td>A byte order mark</td></tr>
+    <tr><td>A zero byte after every ASCII letter</td><td>UTF-16</td></tr>
+    <tr><td>Every time off by the same hours</td><td>A fixed-offset clock read as another</td></tr>
+    <tr><td>An offset that changes with the date</td><td>A zone with daylight saving</td></tr>
+  </table>
+  <aside class="notes"><p>Leave this slide up during the first ten minutes of the lab. The diagnosis sheet asks for one code per file and one line of evidence: the evidence is what makes a diagnosis, not the code. Five of six right is the outcome's evidence.</p></aside>
+</section>
+
+<section class="slide" id="check-text-time" data-lo="LO2">
+  <div class="kicker">Checkpoint</div>
+  <h2>What happened to the catalogue file?</h2>
+  <div class="quiz" data-type="single" data-lo="LO2">
+    <p class="lead">A public library's catalogue export opens in UTF-8 without any error, but its Arabic titles read as long runs of pairs like <span class="ar">ط§ظ„</span>. What happened?</p>
+    <div class="opts">
+      <div class="opt" data-why="Expects a legacy file to fail quietly: cp1256 bytes read as UTF-8 raise errors or show replacement characters">It is in cp1256 and was read as UTF-8</div>
+      <div class="opt" data-why="Confuses a mark with the text: a byte order mark changes only the first characters of the file">It starts with a UTF-8 byte order mark</div>
+      <div class="opt" data-ok>It was decoded as cp1256 once and saved again as UTF-8</div>
+      <div class="opt" data-why="Expects UTF-16 to decode as UTF-8: its zero bytes make the decoder fail or show control characters">It was saved as UTF-16</div>
+    </div>
+    <div class="callout tip why"><b>Why.</b> Valid UTF-8 with nonsense Arabic is the signature of double encoding: the bytes were decoded with the wrong table once, and the wrong text was stored.</div>
+  </div>
+  <aside class="notes"><p>Answer: double encoding. The repair reverses the wrong step: encode as cp1256, decode as UTF-8. If the room splits between the first and third options, return to the "fails or lies" slide: the error is the difference.</p></aside>
 </section>
 
 <section class="slide lab" id="lab-1-2" data-auto="lab" data-lab="1.2">
-  <aside class="notes">REPLACE: what to watch for while participants work, the typical problems, and the fallback for anyone who did not finish an earlier lab</aside>
+  <aside class="notes"><p>Task 2 is AI-off: collect or glance at the sheets before task 3 starts. The check prints how many codes are right, not which. Common traps: confusing the legacy register with the double-encoded notes (one fails to decode, one does not); calling Vendor B a fixed offset after looking at one day only; comparing aware times of one zone directly, which ignores fold. Answers and evidence are in labs/solutions/answer_key.md.</p></aside>
 </section>
 
-<!-- Session 3 -->
-
-<section class="slide section" id="s3" data-auto="section" data-session="3"></section>
-
-<section class="slide" id="s3-idea">
-  <div class="kicker">REPLACE: the question this slide answers</div>
-  <h2>REPLACE: one idea, stated as a sentence</h2>
+<section class="slide" id="text-time-debrief" data-lo="LO2">
+  <div class="kicker">Debrief of lab 1.2</div>
+  <h2>Vendor A was always 180 minutes off; Vendor B 120, then 60</h2>
   <div class="cols cols-2">
     <ul class="bullets">
-      <li>REPLACE: at most six bullets, each a complete thought</li>
-      <li>REPLACE: bold the key phrase; numbers come from the lab run, not from memory</li>
+      <li>A constant gap is a fixed-offset clock: localise to <code>+03:00</code>, convert to UTC.</li>
+      <li>A gap that changes on 25 October is a zone with daylight saving.</li>
+      <li>Two of Vendor B's sessions ended before they started until the repeated hour was resolved by <code>seq</code>.</li>
     </ul>
-    <div class="card c-teal"><h4>In the case study</h4><p class="small mb0">REPLACE: tie the idea to the case study and its data</p></div>
+    <div class="card c-teal"><h4>The repair log</h4><p class="small mb0">One line per file: symptom, cause, repair, rows. A repair nobody can see is a new fault.</p></div>
   </div>
-  <div class="callout warn mt"><b>What goes wrong.</b> REPLACE: the failure participants will hit, and how to recognise it</div>
-  <aside class="notes">REPLACE: what to say, the demo to run, the question to ask the room, the common failure and its fix</aside>
-</section>
-
-<section class="slide" id="s3-steps">
-  <div class="kicker">Step by step</div>
-  <h2>REPLACE: a process, shown one step per key press</h2>
-  <div class="flow">
-    <div class="step c-teal"><b>1 · REPLACE: name</b>REPLACE: what happens first</div>
-    <div class="arrow frag" data-frag="b">→</div><div class="step c-cyan frag" data-frag="b"><b>2 · REPLACE: name</b>REPLACE: the next piece</div>
-    <div class="arrow frag" data-frag="c">→</div><div class="step c-coral frag" data-frag="c"><b>3 · REPLACE: name</b>REPLACE: the result</div>
-  </div>
-  <div class="callout tip mt frag"><b>Takeaway.</b> REPLACE: the one sentence to remember</div>
-  <aside class="notes">Press once per step and say what each step adds before the next one appears. REPLACE: the example to walk through</aside>
-</section>
-
-<section class="slide lab" id="lab-1-3" data-auto="lab" data-lab="1.3">
-  <aside class="notes">REPLACE: what to watch for while participants work, the typical problems, and the fallback for anyone who did not finish an earlier lab</aside>
-</section>
-
-<!-- Session 4 -->
-
-<section class="slide section" id="s4" data-auto="section" data-session="4"></section>
-
-<section class="slide" id="s4-idea">
-  <div class="kicker">REPLACE: the question this slide answers</div>
-  <h2>REPLACE: one idea, stated as a sentence</h2>
-  <div class="cols cols-2">
-    <ul class="bullets">
-      <li>REPLACE: at most six bullets, each a complete thought</li>
-      <li>REPLACE: bold the key phrase; numbers come from the lab run, not from memory</li>
-    </ul>
-    <div class="card c-teal"><h4>In the case study</h4><p class="small mb0">REPLACE: tie the idea to the case study and its data</p></div>
-  </div>
-  <div class="callout warn mt"><b>What goes wrong.</b> REPLACE: the failure participants will hit, and how to recognise it</div>
-  <aside class="notes">REPLACE: what to say, the demo to run, the question to ask the room, the common failure and its fix</aside>
-</section>
-
-<section class="slide" id="s4-steps">
-  <div class="kicker">Step by step</div>
-  <h2>REPLACE: a process, shown one step per key press</h2>
-  <div class="flow">
-    <div class="step c-teal"><b>1 · REPLACE: name</b>REPLACE: what happens first</div>
-    <div class="arrow frag" data-frag="b">→</div><div class="step c-cyan frag" data-frag="b"><b>2 · REPLACE: name</b>REPLACE: the next piece</div>
-    <div class="arrow frag" data-frag="c">→</div><div class="step c-coral frag" data-frag="c"><b>3 · REPLACE: name</b>REPLACE: the result</div>
-  </div>
-  <div class="callout tip mt frag"><b>Takeaway.</b> REPLACE: the one sentence to remember</div>
-  <aside class="notes">Press once per step and say what each step adds before the next one appears. REPLACE: the example to walk through</aside>
-</section>
-
-<section class="slide lab" id="lab-1-4" data-auto="lab" data-lab="1.4">
-  <aside class="notes">REPLACE: what to watch for while participants work, the typical problems, and the fallback for anyone who did not finish an earlier lab</aside>
+  <aside class="notes"><p>Ask who scored six of six on the sheet, and which pair was confused most. All 60 repaired sessions should equal the platform's UTC times. Close with the source rule: had both vendors written offsets (RFC 3339), neither fault could exist. That is what lab 2.2 will insist on at the boundary.</p></aside>
 </section>
 
 <section class="slide" id="wrap-up">
-  <div class="kicker">Day 1 · wrap-up</div>
+  <div class="kicker">Day 1 · Wrap-up</div>
   <h2>Three things to keep</h2>
   <div class="cols cols-3">
-    <div class="card c-teal"><h4>Remember</h4><p class="small mb0">REPLACE: one idea participants keep</p></div>
-    <div class="card c-coral"><h4>Remember</h4><p class="small mb0">REPLACE: one idea participants keep</p></div>
-    <div class="card c-purple"><h4>Remember</h4><p class="small mb0">REPLACE: one idea participants keep</p></div>
+    <div class="card c-teal"><h4>Formats carry promises</h4><p class="small mb0">Only a format with a schema carries types; the others leave them to the reader's guess.</p></div>
+    <div class="card c-cyan"><h4>Bytes need an agreement</h4><p class="small mb0">Look at the bytes, decode, confirm with a known word, log the encoding.</p></div>
+    <div class="card c-coral"><h4>Times need an offset</h4><p class="small mb0">Store UTC; a bare local time is a guess, and daylight saving makes it a bad one.</p></div>
   </div>
+  <aside class="notes"><p>Ask each participant for one file at work they now suspect. Remind them that the labs' outputs count toward the course (40%, test-checked).</p></aside>
 </section>
 
-<section class="slide dark" id="next" data-label="Next">
-  <div class="kicker">Next</div>
-  <h2>Day 2: REPLACE: the theme of this unit, in a few words</h2>
-  <p class="lead">REPLACE: what participants prepare before then; unfinished labs can be finished at home</p>
-  <aside class="notes">REPLACE: accounts, installs or reading participants need before the next unit</aside>
+<section class="slide dark" id="next">
+  <div class="kicker">Tomorrow</div>
+  <h2>Interfaces, and the checks at the boundary</h2>
+  <ul class="bullets">
+    <li>Copy <code>labs/.env.example</code> to <code>labs/.env</code>: the mock API's token lives there, never in a notebook.</li>
+    <li>Read principle 2 of the Open Data Policy (machine-readable formats) before session 3.</li>
+    <li>Day 2 ends with the supervised check, without assistants.</li>
+  </ul>
+  <aside class="notes"><p>The Open Data Policy is linked in the README's national references. The supervised check is 60 minutes at the end of Day 2: devices away except the one that shows the check.</p></aside>
 </section>
