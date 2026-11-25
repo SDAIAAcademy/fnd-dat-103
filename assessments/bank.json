@@ -9,7 +9,7 @@
       "options": [
         "One JSON document holding an array of all the day's records",
         "A Parquet file rewritten after every record",
-        "JSON Lines, one record per line, with its schema written down",
+        "JSON Lines, with its schema written down",
         "A spreadsheet workbook saved after every record"
       ],
       "correct": [
@@ -119,8 +119,8 @@
       "type": "single",
       "prompt": "A training centre's attendance export opens in pandas, the first column is visibly named trainee_code, yet df[\"trainee_code\"] raises a KeyError. What is the likely cause?",
       "options": [
-        "A UTF-8 byte order mark glued to the first column name",
-        "The file uses semicolons instead of commas",
+        "A byte order mark before the first column name",
+        "The file uses semicolons where the reader expects commas",
         "The trainee codes have leading zeros",
         "The file was saved with Windows line endings"
       ],
@@ -200,12 +200,12 @@
     {
       "id": "q-lo2-offset-changes",
       "type": "single",
-      "prompt": "A border-crossing camera logs times without offsets. Compared with a UTC reference, it is 60 minutes ahead in winter and 120 minutes ahead in summer. What is the right repair?",
+      "prompt": "A border-crossing camera logs times without offsets. Compared with a UTC reference, it is 300 minutes behind in winter and 240 minutes behind in summer. What is the right repair?",
       "options": [
-        "Subtract 90 minutes from every time",
-        "Read the times in the camera's zone, then convert to UTC",
-        "Subtract 60 minutes, the winter gap, from every time",
-        "Drop the summer months as unreliable"
+        "Add 270 minutes, the average gap, to every time",
+        "Localise to the camera’s zone, then convert to UTC",
+        "Add 300 minutes, the winter gap, to every time",
+        "Drop the summer months as unreliable, keep the winter"
       ],
       "correct": [
         1
@@ -258,7 +258,7 @@
       "options": [
         "Retry with exponential backoff, up to six times",
         "Wait one minute and try again",
-        "Stop and report it: the credentials are wrong or missing",
+        "Stop and report: the credentials are wrong",
         "Switch to the offset endpoint"
       ],
       "correct": [
@@ -286,7 +286,7 @@
       "prompt": "A city transit API answers 429 Too Many Requests with the header Retry-After: 30. What does a well-behaved client do next?",
       "options": [
         "Waits 30 seconds, then sends the same request again",
-        "Sends the request again at once from a second token",
+        "Sends the request again at once, using a second token",
         "Gives up on the pull and reports the API as down",
         "Waits one second and doubles the page size"
       ],
@@ -315,7 +315,7 @@
       "prompt": "A client pages a news-alerts API by offset, newest first, 100 per page. During the pull, 15 new alerts are published. What happens?",
       "options": [
         "Nothing changes: offsets are fixed when the pull starts",
-        "The client gets 15 alerts twice and never sees the 15 new ones",
+        "15 alerts arrive twice and the 15 new ones are missed",
         "The client sees the 15 new alerts on its next page",
         "The API returns an error and the pull restarts"
       ],
@@ -371,7 +371,7 @@
         "Put the token in a comment so it does not run",
         "Split the token into two strings joined at run time",
         "Clear the notebook's outputs before sharing it",
-        "Read it from an environment variable or an ignored .env file"
+        "Read it from the environment or an ignored .env"
       ],
       "correct": [
         3
@@ -400,7 +400,7 @@
         "One wide table with columns item_1, item_2, item_3 and so on",
         "An orders table and an items table that carries the order id",
         "One table per customer",
-        "Keep each order's item list as a JSON string in one column"
+        "Keep each order's item list as a JSON string in a single column"
       ],
       "correct": [
         1
@@ -428,18 +428,18 @@
       "options": [
         "Print the first rows and look at them",
         "Count the rows in each partition",
-        "Read the schema of a written file and compare it with the declared one",
-        "Check that the folder names start with the partition column"
+        "Check that each folder name starts with the partition column name",
+        "Read a written file’s schema and compare it with the declared"
       ],
       "correct": [
-        2
+        3
       ],
       "explanation": "The file's own schema is what readers will get: compare names, types, time zone and nullability with the declaration, leaving out the partition column that lives in the path.",
       "misconceptions": [
         "Trusts printed values: a float and a decimal, or two time zones, can print alike",
         "Checks completeness, not types",
-        "",
-        "Checks the layout, not the content of the files"
+        "Checks the layout, not the content of the files",
+        ""
       ],
       "lo": [
         "LO4"
@@ -565,18 +565,18 @@
       "options": [
         "Every reading has a number for its value",
         "Every time carries a UTC offset",
-        "No order id appears twice in the batch",
-        "The status is one of three allowed words"
+        "The status is one of three allowed words",
+        "No order id appears twice in the batch"
       ],
       "correct": [
-        2
+        3
       ],
       "explanation": "Uniqueness compares rows with each other, so it runs on the table; types, patterns and allowed values can be checked on each record alone, for example with a JSON Schema.",
       "misconceptions": [
         "A type check looks at one value in one record",
         "A pattern check looks at one value in one record",
-        "",
-        "An allowed-values check looks at one value in one record"
+        "An allowed-values check looks at one value in one record",
+        ""
       ],
       "lo": [
         "LO5"
