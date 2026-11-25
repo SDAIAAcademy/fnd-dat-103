@@ -87,7 +87,7 @@ A checked ingestion script, run live on a batch the assessor supplies. Each part
 
 ## The data, the mock API and the public API
 
-The labs run on a laptop processor or in Google Colab, with Python through `uv` (`labs/pyproject.toml`, `labs/uv.lock`). No lab calls a language model. The mock of the charge-point platform API (`labs/mockapi.py`) is a FastAPI application the notebooks call in-process, with a fixed schedule of faults; `uv run python mockapi.py` (from `labs/`) also serves it on this computer. The last task of lab 2.1 calls a public open-data API, the World Bank Indicators API, live: it reads the series' licence first (CC BY 4.0), and nothing it returns is stored in this repository.
+The labs run on a laptop processor or in Google Colab, with Python through `uv` (`labs/pyproject.toml`). No lab calls a language model. The mock of the charge-point platform API (`labs/mockapi.py`) is a FastAPI application the notebooks call in-process, with a fixed schedule of faults; `uv run python mockapi.py` (from `labs/`) also serves it on this computer. The last task of lab 2.1 calls a public open-data API, the World Bank Indicators API, live: it reads the series' licence first (CC BY 4.0), and nothing it returns is stored in this repository.
 
 <!-- academy:labs -->
 ## Labs
