@@ -1,0 +1,27 @@
+{
+ "batch_01": {
+  "decision": "c3f5e4fbb373cf93",
+  "defects": "e3b0c44298fc1c14",
+  "count": 0
+ },
+ "batch_02": {
+  "decision": "535208f789d38936",
+  "defects": "a954951b35c0ed63",
+  "count": 3
+ },
+ "batch_03": {
+  "decision": "c5a12311d5b25d2f",
+  "defects": "8faf6f6b93ca7b17",
+  "count": 5
+ },
+ "batch_04": {
+  "decision": "cfbf298b2005c75a",
+  "defects": "d604f6f1fab40e28",
+  "count": 1
+ },
+ "batch_05": {
+  "decision": "2e3709c89ed1f8b3",
+  "defects": "927120006f08f8a5",
+  "count": 20
+ }
+}

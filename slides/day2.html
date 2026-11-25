@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="en" dir="ltr" data-ax="deck" data-track="foundations">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Day 2 · Interfaces and the boundary · Data Formats, Interfaces and Quality Checks</title>
+<meta name="generator" content="SDAIA Academy engine 1.0.0">
+<link rel="icon" href="../_engine/icon.svg">
+<link rel="alternate" type="text/markdown" href="day2.md">
+<link rel="describedby" href="../llms.txt">
+<link rel="stylesheet" href="../_engine/academy.css">
+</head>
+<body>
+<div class="deck" data-course="Data Formats, Interfaces and Quality Checks" data-track="foundations" data-day="Day 2">
+<section class="slide title" id="title" data-auto="title" data-label="Welcome" data-n="1">
+  <div class="kicker">SDAIA Academy · Data Formats, Interfaces and Quality Checks</div>
+  <h1>Interfaces and the boundary</h1>
+  <p class="lead mt">Day 2: Pull every record exactly once, then let only a valid batch through</p>
+  <div class="meta"><span class="track">Data &amp; AI Foundations Track</span><span>2 teaching days + capstone day</span><span>2 sessions · 2 labs</span><span>FND-DAT-103</span></div>
+  <aside class="notes"><p>Day 2 moves from files to interfaces and to the boundary where data enters the tables. Two long sessions, then the capstone brief and the supervised check (60 minutes, without assistants). Check that everyone copied labs/.env.example to labs/.env.</p></aside>
+</section>
+
+<section class="slide" id="agenda" data-auto="agenda" data-label="Agenda" data-n="2">
+  <div class="kicker">Today</div>
+  <h2>Interfaces and the boundary</h2>
+  <div class="agenda"><div class="item"><div><b>Session 1 · Interfaces</b><small>Status codes and errors, offset and cursor pagination, rate limits, retries with backoff, raw responses, checkpoints and tokens kept out of code</small></div></div><div class="item"><div><b>Session 2 · Schema and validation</b><small>Nested JSON flattened to typed tables, declared types, ranges and keys, partitioned Parquet, and failing a load versus quarantining rows</small></div></div></div>
+</section>
+
+<section class="slide" id="review-day1" data-lo="LO1 LO2" data-n="3">
+  <div class="kicker">Review of Day 1</div>
+  <h2>Which fault is this?</h2>
+  <div class="quiz" data-type="single" data-lo="LO2" data-id="review-day1-q1">
+    <p class="lead">A water utility's meter readings, logged without offsets, run exactly 240 minutes ahead of the billing system's UTC times on every day of the year. What is the fault?</p>
+    <div class="opts">
+      <div class="opt" data-why="Expects daylight saving to give a constant gap: its gap changes when the clocks change" data-k="A">A clock in a zone that has daylight saving time</div>
+      <div class="opt" data-why="Confuses text faults with time faults: an encoding changes characters, not hours" data-k="B">A file saved in a legacy code page</div>
+      <div class="opt" data-why="Assumes a format can shift values: CSV stores the text the device wrote" data-k="C">A CSV that lost the column's type</div>
+      <div class="opt" data-ok data-k="D">A clock on a fixed offset, read as UTC</div>
+    </div>
+    <div class="callout tip why"><b>Why.</b> A gap that never changes is a fixed offset: localise every time to that offset and convert to UTC.</div>
+  </div>
+  <aside class="notes"><p>Answer: a fixed-offset clock read as UTC. If anyone picks daylight saving, ask what the gap would do on the day the clocks change. Two minutes, then session 3.</p></aside>
+</section>
+
+<!-- Session 1 -->
+
+<section class="slide section" id="s1" data-auto="section" data-session="1" data-n="4">
+  <div class="kicker">Session 1</div>
+  <h1>Interfaces</h1>
+  <ul class="bullets outcomes"><li>Decide from a status code whether to retry, wait or stop</li><li>Explain why cursor pagination survives inserts that offset pagination does not</li><li>Build a rerunnable pull with raw responses, a checkpoint and idempotent writes</li></ul>
+  <div class="sess-no">01</div>
+</section>
+
+<section class="slide" id="http-in-one" data-lo="LO3" data-n="5" data-session="1">
+  <div class="kicker">HTTP in one slide</div>
+  <h2>A request names what you want; the status says what happened</h2>
+  <div class="trace s">
+    <div class="ev user"><b>request</b><code>GET /v1/stations?limit=50&amp;cursor=Yz0x</code> with <code>Authorization: Bearer ...</code></div>
+    <div class="ev result"><b>status</b><code>200 OK</code></div>
+    <div class="ev result"><b>headers</b><code>Content-Type: application/json</code></div>
+    <div class="ev final"><b>body</b><code>{"data": [...50 items...], "next_cursor": "Yz01MA"}</code></div>
+  </div>
+  <p class="lead mt">Read the status before the body: a 429 or a 500 may carry an HTML page, not your JSON.</p>
+  <aside class="notes"><p>This is a generic example, not the lab's API. Ask what a client that calls .json() on every response does when the body is an HTML error page: it crashes far from the cause. Lab 2.1 shows exactly that with a plain client.</p><p>Sources: RFC 9110, HTTP semantics.</p></aside>
+</section>
+
+<section class="slide" id="status-codes" data-lo="LO3" data-n="6" data-session="1">
+  <div class="kicker">Status codes</div>
+  <h2>Each status asks the client for a different action</h2>
+  <table class="t">
+    <tr><th>Status</th><th>Means</th><th>The client</th></tr>
+    <tr><td><code>200</code></td><td>Here is the data</td><td>Uses it</td></tr>
+    <tr><td><code>400</code> <code>401</code> <code>403</code> <code>404</code></td><td>The request is wrong or not allowed</td><td>Stops and reports: repeating will not help</td></tr>
+    <tr class="hl"><td><code>429</code></td><td>Too many requests</td><td>Waits as long as <code>Retry-After</code> says, then repeats</td></tr>
+    <tr><td><code>500</code> <code>502</code> <code>503</code> <code>504</code></td><td>The server failed, often briefly</td><td>Waits longer each time, then repeats; gives up after a few tries</td></tr>
+  </table>
+  <aside class="notes"><p>RFC 6585 defines 429 and says the response may include Retry-After, which RFC 9110 defines as seconds or a date. A 4xx other than 429 is about your request; retrying it adds load and can lock a token. Ask for one example from the room of a 404 that is not an error (a page past the end).</p><p>Sources: RFC 9110; RFC 6585, section 4.</p></aside>
+</section>
+
+<section class="slide" id="offset-vs-cursor" data-lo="LO3" data-n="7" data-session="1">
+  <div class="kicker">Pagination</div>
+  <h2>An offset is a position; a cursor is a bookmark</h2>
+  <div class="cols cols-2">
+    <div class="card c-coral"><h4>Offset: "skip 100, give me 100"</h4><p class="small mb0">Newest first, five new items arrive after page 1. Every older item moves down five places, so page 2 starts with five items you already have, and the five new ones are never seen in this pull.</p></div>
+    <div class="card c-teal"><h4>Cursor: "after the last one I saw"</h4><p class="small mb0">The server returns an opaque token naming the last item. New items at the top do not move what comes after it; the next run picks them up.</p></div>
+  </div>
+  <div class="callout warn mt"><b>What goes wrong.</b> Offset paging fails silently: no error, just repeats and gaps that a count by id would reveal.</div>
+  <aside class="notes"><p>Draw it on the board with a list of ten numbered items and a page size of three. Insert two at the top after the first page and let the room find the repeats. Offset paging is fine for a list that does not change while you read it; most live lists change.</p></aside>
+</section>
+
+<section class="slide" id="backoff" data-lo="LO3" data-n="8" data-session="1">
+  <div class="kicker">Retries</div>
+  <h2>Back off exponentially, add jitter, and stop after a few tries</h2>
+  <div class="cols cols-2">
+    <div class="bars">
+      <div class="row"><span>Try 1</span><div class="bar c-teal" style="--w:6%"></div><span class="val">0.5 s</span></div>
+      <div class="row"><span>Try 2</span><div class="bar c-teal" style="--w:12%"></div><span class="val">1 s</span></div>
+      <div class="row"><span>Try 3</span><div class="bar c-cyan" style="--w:25%"></div><span class="val">2 s</span></div>
+      <div class="row"><span>Try 4</span><div class="bar c-cyan" style="--w:50%"></div><span class="val">4 s</span></div>
+      <div class="row"><span>Try 5</span><div class="bar c-coral" style="--w:100%"></div><span class="val">8 s</span></div>
+    </div>
+    <ul class="bullets">
+      <li><b>Wait</b> = base × 2<sup>try − 1</sup>, capped, plus a small random jitter.</li>
+      <li>Jitter spreads clients that failed together, so they do not return together.</li>
+      <li>A 429 with <code>Retry-After</code> overrides the formula.</li>
+    </ul>
+  </div>
+  <aside class="notes"><p>The waits shown are the formula with a base of half a second, before jitter. In the lab the client calls sleep through a parameter: the notebook passes a fake clock that records waits instead of waiting, so a run with minutes of backoff takes seconds and the log shows every wait. That is also how you test retry code.</p></aside>
+</section>
+
+<section class="slide" id="keep-raw" data-lo="LO3" data-n="9" data-session="1">
+  <div class="kicker">Raw responses</div>
+  <h2>Keep every raw response before you parse it</h2>
+  <div class="cols cols-3">
+    <div class="card c-teal"><h4>Replay</h4><p class="small mb0">Fix a parsing bug and rerun from the saved pages, without calling the API again.</p></div>
+    <div class="card c-cyan"><h4>Audit</h4><p class="small mb0">Show what the source said on the day, not what your code made of it.</p></div>
+    <div class="card c-purple"><h4>Debug</h4><p class="small mb0">An odd value downstream can be traced to the page it came from.</p></div>
+  </div>
+  <div class="callout warn mt"><b>Never the headers.</b> Save the path, the parameters, the status and the body. The request headers carry the token.</div>
+  <aside class="notes"><p>Ask how long raw pages should be kept: the API's terms may say (the lab's mock says 30 days). Raw pages are also the starting state of lab 2.2: the course supplies a clean pull in labs/data/raw_api/ so nobody depends on finishing lab 2.1.</p></aside>
+</section>
+
+<section class="slide" id="rerunnable" data-lo="LO3" data-n="10" data-session="1">
+  <div class="kicker">Rerunnable loads</div>
+  <h2>Write records by key, then the checkpoint: a crash anywhere is safe</h2>
+  <div class="flow">
+    <div class="step c-teal"><b>1 · Fetch</b>the page after the saved cursor</div>
+    <div class="arrow">→</div>
+    <div class="step c-cyan"><b>2 · Save raw</b>the page as it came</div>
+    <div class="arrow">→</div>
+    <div class="step c-purple"><b>3 · Write by id</b>skip ids already kept</div>
+    <div class="arrow">→</div>
+    <div class="step c-amber"><b>4 · Checkpoint</b>the next cursor</div>
+  </div>
+  <ul class="bullets mt">
+    <li>A crash before step 4 means the page is fetched again; step 3 makes that harmless.</li>
+    <li>"Exactly once" is proven by counting: records equal unique ids equal the source's count.</li>
+  </ul>
+  <aside class="notes"><p>The worst moment to crash is after writing and before checkpointing: the lab stops the run exactly there. Idempotent means doing it twice has the same effect as once. Ask what would happen with an append-only write and no id check: duplicates on every resume.</p></aside>
+</section>
+
+<section class="slide" id="tokens-out" data-lo="LO3" data-n="11" data-session="1">
+  <div class="kicker">Tokens</div>
+  <h2>A token belongs to a person and the environment, never to the code</h2>
+  <div class="cols cols-2">
+    <pre class="code" data-file="client.py"><code class="language-python"><span class="hljs-keyword">import</span> os
+
+<span class="hljs-comment"># set in the shell, or in .env (excluded by .gitignore)</span>
+token = os.environ[<span class="hljs-string">&quot;SOURCE_API_TOKEN&quot;</span>]
+auth = {<span class="hljs-string">&quot;Authorization&quot;</span>: <span class="hljs-string">f&quot;Bearer <span class="hljs-subst">{token}</span>&quot;</span>}
+client = httpx.Client(headers=auth)</code></pre>
+    <ul class="bullets">
+      <li>Commit <code>.env.example</code> with a placeholder value; never <code>.env</code>.</li>
+      <li>A token pasted in a notebook stays in its history and every copy.</li>
+      <li>Tokens are issued per person by the data's owner, who can revoke them.</li>
+    </ul>
+  </div>
+  <aside class="notes"><p>The course's mock token in .env.example is a course value that opens only the mock. Segregation of duties: the person who writes the client does not issue or hold the production token; the platform owner issues one per person and revokes it. The lab checks that no saved page or log line contains the token.</p></aside>
+</section>
+
+<section class="slide" id="terms-first" data-lo="LO3" data-n="12" data-session="1">
+  <div class="kicker">Respectful collection</div>
+  <h2>Read the terms and limits before the first request</h2>
+  <ul class="bullets">
+    <li><b>Rate limits:</b> stay under them; honour <code>429</code> and <code>Retry-After</code>.</li>
+    <li><b>Licence:</b> what you may keep, share and publish, and how to credit the source.</li>
+    <li><b>Retention:</b> how long raw responses may be kept.</li>
+    <li><b>No published limit</b> is not permission: set your own pace, write it in the code, and say it is yours.</li>
+  </ul>
+  <div class="callout tip mt"><b>In the lab.</b> The public API task reads the series' licence from its metadata and stops unless it is open; it then paces itself at one request a second, the course's own rule.</div>
+  <aside class="notes"><p>The public API of the lab, the World Bank Indicators API, needs no key, pages by number and records a licence per series; its datasets terms say CC BY 4.0 unless labelled otherwise. It publishes no rate limit, so one request a second is the course's rule, not the provider's. Nothing it returns is stored in the course.</p><p>Sources: World Bank, API basic call structures; World Bank terms of use for datasets.</p></aside>
+</section>
+
+<section class="slide" id="open-data-policy" data-lo="LO3" data-n="13" data-session="1">
+  <div class="kicker">National reference</div>
+  <h2>The Open Data Policy asks for machine-readable formats and a licence</h2>
+  <div class="cols cols-2">
+    <div class="card c-teal"><h4>Principle 2 · Open Format and Machine-Readable</h4><p class="small mb0"><span class="ar">«المبدأ الثاني: الصيغة المفتوحة وإمكانية القراءة آلياً»</span>: data is made available in a machine-readable format that allows automated processing, in widely used file formats such as CSV, XLS, JSON and XML.</p></div>
+    <div class="card c-cyan"><h4>Principle 7 · Open Data Licensing in KSA</h4><p class="small mb0"><span class="ar">«المبدأ السابع: ترخيص البيانات المفتوحة في المملكة»</span>: open data is subject to a licence that sets the conditions of use; using the data indicates acceptance of the licence terms.</p></div>
+  </div>
+  <p class="caption mt">NDMO Open Data Policy, National Data Governance Policies, version 1 of 5/5/2020, read from the PDF on sdaia.gov.sa on 25 November 2026. Paraphrased; the Arabic headings are quoted.</p>
+  <aside class="notes"><p>This is the pre-work reading. The policy binds public entities publishing on the National Open Data Portal; for a data user it explains why open data arrives in these formats and with a licence to read first. Ask: which of yesterday's three formats does principle 2 name? CSV and JSON among others; Parquet is not listed, and the policy says "such as".</p><p>Sources: NDMO Open Data Policy, English and Arabic editions, section 5.2.</p></aside>
+</section>
+
+<section class="slide" id="check-retry" data-lo="LO3" data-n="14" data-session="1">
+  <div class="kicker">Checkpoint</div>
+  <h2>Which response should the client retry?</h2>
+  <div class="quiz" data-type="single" data-lo="LO3" data-id="check-retry-q1">
+    <p class="lead">A pull from a weather-station network's API gets these four answers on different pages. Which one should it retry after a wait, with no change to the request?</p>
+    <div class="opts">
+      <div class="opt" data-ok data-k="A">503 Service Unavailable</div>
+      <div class="opt" data-why="Treats a client error as temporary: a malformed parameter fails the same way every time" data-k="B">400 Bad Request: "limit must be at most 200"</div>
+      <div class="opt" data-why="Treats an authorisation failure as temporary: retrying a bad token adds load and may lock it" data-k="C">401 Unauthorized</div>
+      <div class="opt" data-why="Treats a missing resource as an outage: the station id does not exist, and asking again will not create it" data-k="D">404 Not Found for one station</div>
+    </div>
+    <div class="callout tip why"><b>Why.</b> A 503 reports a temporary failure of the server: the same request can succeed later, after a backoff.</div>
+  </div>
+  <aside class="notes"><p>Answer: 503. The 400 needs a change to the request (a smaller limit), then it is a new request, not a retry. If the room picks 401, return to the tokens slide.</p></aside>
+</section>
+
+<section class="slide lab top" id="lab-2-1" data-auto="lab" data-lab="2.1" data-label="Lab 2.1" data-n="15" data-session="1">
+  <div class="cols cols-2 mid"><div><div class="lab-tag">Lab 2.1 · 100 min</div><h2>Every record, exactly once</h2><p class="lead small">A client for the mock platform API that follows cursors, retries, keeps raw pages and resumes, then a polite public pull</p><a class="nb" href="../labs/D2_1_api_client.ipynb">D2_1_api_client.ipynb</a></div><ul class="checklist"><li>Read the API’s terms; load the token from the environment <span class="min">10 min</span></li><li>Fetch one page by hand <span class="min">10 min</span></li><li>Write fetch_all: cursor, raw pages, checkpoint <span class="min">25 min</span></li><li>Add retries for 429 and 5xx; stop on other errors <span class="min">20 min</span></li><li>Interrupt, resume, prove exactly once <span class="min">10 min</span></li><li>Find what offset paging repeats and misses <span class="min">10 min</span></li><li>Read a public API’s licence, then pull every page politely <span class="min">15 min</span></li><li class="stretch">✱ Stretch: Make the public pull resumable</li></ul></div>
+  <aside class="notes"><p>AI-tutor. Watch task 3: many write the checkpoint before the records; ask them where a crash then loses data. Task 4: people forget to stop on 401 and loop. The mock runs inside the notebook, so no port or firewall issue. The last task needs the internet; if the venue blocks it, the cell says so and the rest of the lab stands. Numbers to expect are in labs/solutions/answer_key.md.</p></aside>
+</section>
+
+<section class="slide" id="api-debrief" data-lo="LO3" data-n="16" data-session="1">
+  <div class="kicker">Debrief of lab 2.1</div>
+  <h2>1,200 sessions, exactly once, through 429, 500, 503 and a crash</h2>
+  <div class="cols cols-4">
+    <div class="stat center"><div class="big">16</div><div class="lbl">requests for 12 pages, retries included</div></div>
+    <div class="stat center"><div class="big">4.2 s</div><div class="lbl">waited, on the fake clock</div></div>
+    <div class="stat center"><div class="big">100</div><div class="lbl">records dropped as duplicates on resume</div></div>
+    <div class="stat center"><div class="big">20</div><div class="lbl">ids repeated by offset paging, and 20 never seen</div></div>
+  </div>
+  <p class="caption mt">The course's reference run of lab 2.1 on the mock API (1,200 synthetic sessions). The public pull of that run read 266 rows in 6 pages, matching the API's own total.</p>
+  <aside class="notes"><p>Ask who saw the plain client die with a KeyError on 'data': the crash came from parsing a 429 body, far from the cause. The run log's summary line is the outcome's evidence: records, unique ids and the expected count equal, nothing missing. Public pull counts can change when the publisher revises the series; the check compares with the API's own total.</p></aside>
+</section>
+
+<!-- Session 2 -->
+
+<section class="slide section" id="s2" data-auto="section" data-session="2" data-n="17">
+  <div class="kicker">Session 2</div>
+  <h1>Schema and validation</h1>
+  <ul class="bullets outcomes"><li>Flatten nested records into one table per grain, keys carried down</li><li>Declare a schema and prove the written files match it</li><li>Decide per batch whether to load, quarantine rows or reject, and report why</li></ul>
+  <div class="sess-no">02</div>
+</section>
+
+<section class="slide" id="one-table-per-grain" data-lo="LO4" data-n="18" data-session="2">
+  <div class="kicker">Flattening</div>
+  <h2>Nested JSON becomes one table per grain, with the key carried down</h2>
+  <div class="cols cols-2">
+    <pre class="code" data-file="appointment.json"><code>{"visit_id": "V-0193",
+ "clinic": {"id": "C04", "floor": 2},
+ "booked_at": "2026-11-03T08:40:00+03:00",
+ "tests": [{"code": "T-11", "result": 5.4},
+           {"code": "T-27", "result": 0.9}]}</code></pre>
+    <ul class="bullets">
+      <li><b>Once per visit</b> (the clinic object): columns of the visits table, <code>clinic_id</code>, <code>clinic_floor</code>.</li>
+      <li><b>A list</b> (the tests): its own table, one row per test, with <code>visit_id</code> on every row.</li>
+      <li>Count after flattening: visits equal records; tests equal the sum of list lengths.</li>
+    </ul>
+  </div>
+  <aside class="notes"><p>Parallel example: a clinic visit with its tests, not the lab's charging sessions. Ask what goes wrong with columns test_1, test_2, test_3: a visit with four tests. Ask what goes wrong with one row per test and the clinic repeated: the visit's own numbers are counted once per test when summed.</p></aside>
+</section>
+
+<section class="slide" id="declared-schema" data-lo="LO4" data-n="19" data-session="2">
+  <div class="kicker">Declared types</div>
+  <h2>Declare the schema in code, and cast to it before writing</h2>
+  <pre class="code" data-file="schema.py"><code class="language-python"><span class="hljs-keyword">import</span> pyarrow <span class="hljs-keyword">as</span> pa
+
+VISITS = pa.schema([
+    pa.field(<span class="hljs-string">&quot;visit_id&quot;</span>, pa.string(), nullable=<span class="hljs-literal">False</span>),
+    pa.field(<span class="hljs-string">&quot;clinic_id&quot;</span>, pa.string(), nullable=<span class="hljs-literal">False</span>),
+    pa.field(<span class="hljs-string">&quot;booked_at&quot;</span>, pa.timestamp(<span class="hljs-string">&quot;us&quot;</span>, tz=<span class="hljs-string">&quot;UTC&quot;</span>), nullable=<span class="hljs-literal">False</span>),
+    pa.field(<span class="hljs-string">&quot;month&quot;</span>, pa.string(), nullable=<span class="hljs-literal">False</span>),   <span class="hljs-comment"># the partition column</span>
+])
+table = pa.Table.from_pandas(visits, schema=VISITS, preserve_index=<span class="hljs-literal">False</span>)</code></pre>
+  <ul class="bullets mt">
+    <li>A value that cannot be cast fails here, at the boundary, not in next month's report.</li>
+  </ul>
+  <aside class="notes"><p>Point at the time zone in the type: a timestamp column that says UTC cannot silently hold local times. Nullable=False turns "missing" into an error at cast time. Source: Apache Arrow Python documentation.</p></aside>
+</section>
+
+<section class="slide" id="check-written" data-lo="LO4" data-n="20" data-session="2">
+  <div class="kicker">Proof</div>
+  <h2>Prove the files match the declaration by reading their schema back</h2>
+  <div class="flow">
+    <div class="step c-teal"><b>1 · Write</b>partitioned by the declared column</div>
+    <div class="arrow">→</div>
+    <div class="step c-cyan"><b>2 · Read the schema</b>of one written file</div>
+    <div class="arrow">→</div>
+    <div class="step c-purple"><b>3 · Compare</b>with the declaration, minus the partition column</div>
+    <div class="arrow">→</div>
+    <div class="step c-amber"><b>4 · Count</b>rows read back from the whole folder</div>
+  </div>
+  <div class="callout note mt"><b>Why minus one column.</b> In hive partitioning the partition value lives in the folder name; readers add it back as a column.</div>
+  <aside class="notes"><p>This is the evidence of LO4: files whose schema matches the declared one. Printing rows is not proof: two time zones or a float and a decimal can print alike. pyarrow.parquet.read_schema reads only the footer, so the check is cheap.</p></aside>
+</section>
+
+<section class="slide" id="two-layers" data-lo="LO5" data-n="21" data-session="2">
+  <div class="kicker">Validation</div>
+  <h2>Check each record, then check the table</h2>
+  <table class="t">
+    <tr><th>Layer</th><th>Rules</th><th>Example tool</th></tr>
+    <tr><td><b>Record</b>, one at a time</td><td>Required fields, types, patterns (a time with its offset), allowed values</td><td>JSON Schema</td></tr>
+    <tr><td><b>Table</b>, the batch as a whole</td><td>Unique keys, ranges, one column against another, values that must exist in a register</td><td>Pandera</td></tr>
+  </table>
+  <ul class="bullets mt">
+    <li>Record checks run before flattening, on the raw JSON.</li>
+    <li>Table checks run on the typed table, after the cast.</li>
+  </ul>
+  <aside class="notes"><p>A primary key in a database (FND-DAT-101) is one kind of table check; here the checks run before anything reaches a database. Tools are examples: plain assertions in Python fill the same slot for a small batch. Sources: JSON Schema specification; Pandera documentation.</p></aside>
+</section>
+
+<section class="slide" id="json-schema-example" data-lo="LO5" data-n="22" data-session="2">
+  <div class="kicker">Record checks</div>
+  <h2>A JSON Schema states what one record must be</h2>
+  <pre class="code" data-file="visit.schema.json"><code>{"type": "object",
+ "required": ["visit_id", "clinic", "booked_at", "tests"],
+ "properties": {
+   "visit_id": {"type": "string", "pattern": "^V-[0-9]{4}$"},
+   "booked_at": {"type": "string",
+     "pattern": "^[0-9-]{10}T[0-9:]{8}(Z|[+-][0-9]{2}:[0-9]{2})$"},
+   "tests": {"type": "array", "minItems": 1}}}</code></pre>
+  <ul class="bullets mt">
+    <li>Each error names its rule (<code>required</code>, <code>type</code>, <code>pattern</code>) and its path: the report's reason.</li>
+  </ul>
+  <aside class="notes"><p>Parallel example: the clinic visits. Show jsonschema's iter_errors on a record with booked_at cut to "2026-11-03T08:40:00": one pattern error at path booked_at. A schema is a document: version it, and add optional fields without breaking old senders (the lab's stretch).</p></aside>
+</section>
+
+<section class="slide" id="pandera-example" data-lo="LO5" data-n="23" data-session="2">
+  <div class="kicker">Table checks</div>
+  <h2>Named table checks give every failing row a reason</h2>
+  <pre class="code" data-file="checks.py"><code class="language-python"><span class="hljs-keyword">import</span> pandera.pandas <span class="hljs-keyword">as</span> pa
+
+checks = pa.DataFrameSchema(
+    {<span class="hljs-string">&quot;visit_id&quot;</span>: pa.Column(<span class="hljs-literal">None</span>, pa.Check(<span class="hljs-keyword">lambda</span> s: ~s.duplicated(keep=<span class="hljs-literal">False</span>), name=<span class="hljs-string">&quot;duplicate_key&quot;</span>)),
+     <span class="hljs-string">&quot;clinic_id&quot;</span>: pa.Column(<span class="hljs-literal">None</span>, pa.Check(<span class="hljs-keyword">lambda</span> s: s.isin(CLINICS), name=<span class="hljs-string">&quot;unknown_clinic&quot;</span>))},
+    checks=[pa.Check(<span class="hljs-keyword">lambda</span> df: df[<span class="hljs-string">&quot;seen_at&quot;</span>] &gt;= df[<span class="hljs-string">&quot;booked_at&quot;</span>], name=<span class="hljs-string">&quot;seen_before_booked&quot;</span>)])
+checks.validate(visits, lazy=<span class="hljs-literal">True</span>)   <span class="hljs-comment"># raises SchemaErrors listing every failure</span></code></pre>
+  <aside class="notes"><p>lazy=True collects every failure instead of stopping at the first; err.failure_cases has the check name and the row index, which is what a quarantine file needs. Name each check: built-in checks report a generated description, which is harder for an owner to read.</p></aside>
+</section>
+
+<section class="slide" id="fail-or-quarantine" data-lo="LO5" data-n="24" data-session="2">
+  <div class="kicker">The decision</div>
+  <h2>Reject the batch, or quarantine rows: decide by written rules</h2>
+  <div class="flow v">
+    <div class="step c-coral"><b>The interface changed</b>a required field missing from nearly every record: reject the batch, name the field</div>
+    <div class="arrow">↓</div>
+    <div class="step c-amber"><b>Some rows break the rules</b>quarantine each with its reason, keep the rest</div>
+    <div class="arrow">↓</div>
+    <div class="step c-purple"><b>Too many rows break</b>above the organisation's threshold: reject the batch</div>
+    <div class="arrow">↓</div>
+    <div class="step c-teal"><b>Otherwise</b>load the valid rows</div>
+  </div>
+  <aside class="notes"><p>The thresholds are choices, not standards: the lab uses 90% for a changed interface and 5% for "too many", the case organisation's own rules. What matters is that they are written down and applied the same way every time. Ask why "too many" rejects even the good rows: the same fault may hide in rows that passed.</p></aside>
+</section>
+
+<section class="slide" id="owners-see" data-lo="LO5" data-n="25" data-session="2">
+  <div class="kicker">Quarantine</div>
+  <h2>Quarantine so that owners see what failed, and fix it at the source</h2>
+  <div class="cols cols-3">
+    <div class="card c-teal"><h4>The loader</h4><p class="small mb0">Writes each row with its rule and meaning; does not edit or release rows.</p></div>
+    <div class="card c-cyan"><h4>The data owner</h4><p class="small mb0">Corrects the source and sends the rows again.</p></div>
+    <div class="card c-purple"><h4>A second person</h4><p class="small mb0">Reviews any release of quarantined rows.</p></div>
+  </div>
+  <div class="callout note mt"><b>Next.</b> Data contracts, with versions and service levels between sender and receiver, follow in DEV-DAT-204.</div>
+  <aside class="notes"><p>Segregation of duties: whoever writes the checks should not also be the one who waives them. Deleting bad rows hides the fault from the people who can fix it; silently repairing them hides it too. The quarantine file is part of the responsible-use statement of this course.</p></aside>
+</section>
+
+<section class="slide" id="check-quarantine" data-lo="LO5" data-n="26" data-session="2">
+  <div class="kicker">Checkpoint</div>
+  <h2>Load, quarantine or reject?</h2>
+  <div class="quiz" data-type="single" data-lo="LO5" data-id="check-quarantine-q1">
+    <p class="lead">A library's loans batch has 400 rows. Twelve rows (3%) name a branch code that is not in the branch register; every other check passes. The written rules: reject on a changed interface, or above 5% quarantined.</p>
+    <div class="opts">
+      <div class="opt" data-why="Treats any defect as a reason to stop: the rules reject only a changed interface or more than 5%" data-k="A">Reject the whole batch</div>
+      <div class="opt" data-why="Repairs data the loader does not own: the branch team must say which code was meant" data-k="B">Map the twelve codes to the nearest valid branch and load all</div>
+      <div class="opt" data-ok data-k="C">Load 388 rows and quarantine 12 with their reason</div>
+      <div class="opt" data-why="Hides the fault from its owner: dropped rows cannot be corrected and resent" data-k="D">Load 388 rows and drop the 12</div>
+    </div>
+    <div class="callout tip why"><b>Why.</b> 3% is under the written threshold, so the valid rows load and the twelve go to the branch team with the reason, to fix at the source.</div>
+  </div>
+  <aside class="notes"><p>Answer: load 388, quarantine 12. If the room picks "map to the nearest branch", ask who signs off that guess. If it picks "drop", ask how the branch team would ever learn.</p></aside>
+</section>
+
+<section class="slide lab top" id="lab-2-2" data-auto="lab" data-lab="2.2" data-label="Lab 2.2" data-n="27" data-session="2">
+  <div class="cols cols-2 mid"><div><div class="lab-tag">Lab 2.2 · 90 min</div><h2>Flatten, write, validate</h2><p class="lead small">Raw API pages flattened to typed tables, written as day-partitioned Parquet, then five batches loaded, quarantined or rejected</p><a class="nb" href="../labs/D2_2_flatten_validate.ipynb">D2_2_flatten_validate.ipynb</a></div><ul class="checklist"><li>Check every raw record against the JSON Schema <span class="min">15 min</span></li><li>Flatten into sessions and readings tables <span class="min">20 min</span></li><li>Write day-partitioned Parquet with the declared schema; check it <span class="min">15 min</span></li><li>Declare the table checks with Pandera <span class="min">15 min</span></li><li>Validate five batches and write the report <span class="min">20 min</span></li><li>Read the quarantine file as its owner <span class="min">5 min</span></li><li class="stretch">✱ Stretch: Add an optional field (schema version 2) without breaking version 1</li></ul></div>
+  <aside class="notes"><p>AI-tutor. The lab starts from the supplied raw pages, so it does not depend on lab 2.1. Watch task 2: people forget to carry session_id into the readings table. Task 3: the schema comparison must leave out the partition column. Task 5: the check prints whether every seeded defect was caught and every decision is right, without showing the key. The key is labs/solutions/batch_key.json.</p></aside>
+</section>
+
+<section class="slide" id="validate-debrief" data-lo="LO4 LO5" data-n="28" data-session="2">
+  <div class="kicker">Debrief of lab 2.2</div>
+  <h2>Two batches rejected, two partly quarantined, the clean one loaded whole</h2>
+  <table class="t small">
+    <tr><th>Batch</th><th>Decision</th><th>Why</th></tr>
+    <tr><td>1</td><td>load 200</td><td>clean</td></tr>
+    <tr><td>2</td><td>load 197, quarantine 3</td><td>a missing field, a wrong type, a time without offset</td></tr>
+    <tr><td>3</td><td>load 194, quarantine 6</td><td>a duplicated key, two out-of-range values, an end before its start, an unknown station</td></tr>
+    <tr class="hl"><td>4</td><td>reject</td><td>energy_kwh renamed in every record</td></tr>
+    <tr class="hl"><td>5</td><td>reject, 20 rows to quarantine</td><td>10% of times without offsets, above 5%</td></tr>
+  </table>
+  <aside class="notes"><p>Show after the lab. The written files matched the declared schema; 1,200 sessions and 4,187 readings; 14 day partitions. Batch 3 quarantines 6 rows for 5 defects because the duplicated session is two rows. Ask which decision people disagreed with and which rule they would write differently.</p></aside>
+</section>
+
+<section class="slide" id="capstone-brief" data-lo="LO1 LO2 LO3 LO4 LO5" data-n="29" data-session="2">
+  <div class="kicker">The capstone</div>
+  <h2>Your follow-up task: a checked ingestion script, run live on an unseen batch</h2>
+  <div class="cols cols-2">
+    <ul class="bullets">
+      <li>One script: read the register in its real encoding, convert a vendor log to UTC, validate the sessions, write typed Parquet, quarantine and report.</li>
+      <li>Practise on <code>labs/capstone/practice/</code> and on batches of your own seeds.</li>
+      <li>Hand in a public GitHub repository link within two weeks; no token or <code>.env</code> in it.</li>
+    </ul>
+    <div class="card c-coral"><h4>On the day</h4><p class="small mb0">The assessor generates a batch you have not seen. You run the script live for six minutes, then answer five minutes of questions.</p></div>
+  </div>
+  <aside class="notes"><p>The brief is labs/capstone/README.md. AI-full: any assistant may help write the script, but the live run tests whether the participant can explain each decision. Passing needs the capstone batch loaded or rejected for the correct reasons.</p></aside>
+</section>
+
+<section class="slide" id="wrap-up" data-n="30" data-session="2">
+  <div class="kicker">Day 2 · Wrap-up</div>
+  <h2>Three things to keep</h2>
+  <div class="cols cols-3">
+    <div class="card c-teal"><h4>Pull politely, prove completeness</h4><p class="small mb0">Terms first, cursor, backoff, raw pages, and a count that proves exactly once.</p></div>
+    <div class="card c-cyan"><h4>Declare, then prove</h4><p class="small mb0">A schema in code, a cast at the boundary, and the written schema read back.</p></div>
+    <div class="card c-coral"><h4>Stop bad batches visibly</h4><p class="small mb0">Reject or quarantine by written rules, and send the reasons to the owner.</p></div>
+  </div>
+  <aside class="notes"><p>Then the supervised check: 60 minutes, without assistants (5 for rules and devices away, 50 for the check, 5 for collection). Its items are not in the course repository.</p></aside>
+</section>
+
+<section class="slide dark" id="next" data-n="31" data-session="2">
+  <div class="kicker">Next</div>
+  <h2>The supervised check now; the capstone in two weeks</h2>
+  <ul class="bullets">
+    <li>The check is without assistants; bring only the device that shows it.</li>
+    <li>Build the ingestion script in the follow-up task, and test it on several seeds.</li>
+    <li>Bring a terminal that runs it, and your repository link, to the capstone session.</li>
+  </ul>
+  <aside class="notes"><p>The follow-up task is tracked: ask participants to share their repository link at the halfway point so a trainer can open it before the capstone session.</p></aside>
+</section>
+</div>
+<script type="application/json" id="academy-data">{"v":1,"engine":"1.0.0","build":{"at":"2026-11-25T06:16:18Z","version":"2027.1.0","commit":"45af7a9"},"course":{"id":"fnd-dat-103","code":"FND-DAT-103","title":"Data Formats, Interfaces and Quality Checks","track":"foundations","lang":"en","dir":"ltr","url":"https://sdaiaacademy.github.io/fnd-dat-103/","repo":"SDAIAAcademy/fnd-dat-103","home":"../index.html"},"deck":{"id":"day2","kind":"day","day":2,"label":"Day 2","title":"Interfaces and the boundary","prev":"day1.html","next":"capstone.html","md":"day2.md","alt":{}},"sessions":[{"n":1,"label":"Session 1","title":"Interfaces","slide":"s1","outcomes":["Decide from a status code whether to retry, wait or stop","Explain why cursor pagination survives inserts that offset pagination does not","Build a rerunnable pull with raw responses, a checkpoint and idempotent writes"],"minutes":155,"lab":{"id":"2.1","title":"Every record, exactly once","minutes":100,"href":"../labs/D2_1_api_client.ipynb"}},{"n":2,"label":"Session 2","title":"Schema and validation","slide":"s2","outcomes":["Flatten nested records into one table per grain, keys carried down","Declare a schema and prove the written files match it","Decide per batch whether to load, quarantine rows or reject, and report why"],"minutes":150,"lab":{"id":"2.2","title":"Flatten, write, validate","minutes":90,"href":"../labs/D2_2_flatten_validate.ipynb"}}],"slides":[{"id":"title","n":1,"title":"Interfaces and the boundary","kind":"title","session":0,"hash":"6c71b859","md":"#### [day2#title] Interfaces and the boundary\n\n*SDAIA Academy · Data Formats, Interfaces and Quality Checks*\n\nDay 2: Pull every record exactly once, then let only a valid batch through\n\nData & AI Foundations Track · 2 teaching days + capstone day · 2 sessions · 2 labs · FND-DAT-103","notes":"Day 2 moves from files to interfaces and to the boundary where data enters the tables. Two long sessions, then the capstone brief and the supervised check (60 minutes, without assistants). Check that everyone copied labs/.env.example to labs/.env.","minutes":null,"lo":[]},{"id":"agenda","n":2,"title":"Interfaces and the boundary","kind":"content","session":0,"hash":"d718f135","md":"#### [day2#agenda] Interfaces and the boundary\n\n*Today*\n\n- **Session 1 · Interfaces**: Status codes and errors, offset and cursor pagination, rate limits, retries with backoff, raw responses, checkpoints and tokens kept out of code\n- **Session 2 · Schema and validation**: Nested JSON flattened to typed tables, declared types, ranges and keys, partitioned Parquet, and failing a load versus quarantining rows","notes":"","minutes":null,"lo":[]},{"id":"review-day1","n":3,"title":"Which fault is this?","kind":"quiz","session":0,"hash":"9c826301","md":"#### [day2#review-day1] Which fault is this?\n\n*Review of Day 1*\n\n**Question:** A water utility's meter readings, logged without offsets, run exactly 240 minutes ahead of the billing system's UTC times on every day of the year. What is the fault?\n\n- A. A clock in a zone that has daylight saving time\n- B. A file saved in a legacy code page\n- C. A CSV that lost the column's type\n- D. A clock on a fixed offset, read as UTC","notes":"Answer: a fixed-offset clock read as UTC. If anyone picks daylight saving, ask what the gap would do on the day the clocks change. Two minutes, then session 3.","minutes":null,"lo":["LO1","LO2"]},{"id":"s1","n":4,"title":"Interfaces","kind":"section","session":1,"hash":"adfc540a","md":"#### [day2#s1] Interfaces\n\n*Session 1*\n\n- Decide from a status code whether to retry, wait or stop\n- Explain why cursor pagination survives inserts that offset pagination does not\n- Build a rerunnable pull with raw responses, a checkpoint and idempotent writes","notes":"","minutes":null,"lo":["LO3"]},{"id":"http-in-one","n":5,"title":"A request names what you want; the status says what happened","kind":"content","session":1,"hash":"450e206d","md":"#### [day2#http-in-one] A request names what you want; the status says what happened\n\n*HTTP in one slide*\n\n- request: `GET /v1/stations?limit=50&cursor=Yz0x` with `Authorization: Bearer ...`\n- status: `200 OK`\n- headers: `Content-Type: application/json`\n- body: `{\"data\": [...50 items...], \"next_cursor\": \"Yz01MA\"}`\n\nRead the status before the body: a 429 or a 500 may carry an HTML page, not your JSON.","notes":"This is a generic example, not the lab's API. Ask what a client that calls .json() on every response does when the body is an HTML error page: it crashes far from the cause. Lab 2.1 shows exactly that with a plain client.\n\nSources: RFC 9110, HTTP semantics.","minutes":null,"lo":["LO3"]},{"id":"status-codes","n":6,"title":"Each status asks the client for a different action","kind":"content","session":1,"hash":"2f6abb15","md":"#### [day2#status-codes] Each status asks the client for a different action\n\n*Status codes*\n\n| Status | Means | The client |\n| --- | --- | --- |\n| `200` | Here is the data | Uses it |\n| `400` `401` `403` `404` | The request is wrong or not allowed | Stops and reports: repeating will not help |\n| `429` | Too many requests | Waits as long as `Retry-After` says, then repeats |\n| `500` `502` `503` `504` | The server failed, often briefly | Waits longer each time, then repeats; gives up after a few tries |","notes":"RFC 6585 defines 429 and says the response may include Retry-After, which RFC 9110 defines as seconds or a date. A 4xx other than 429 is about your request; retrying it adds load and can lock a token. Ask for one example from the room of a 404 that is not an error (a page past the end).\n\nSources: RFC 9110; RFC 6585, section 4.","minutes":null,"lo":["LO3"]},{"id":"offset-vs-cursor","n":7,"title":"An offset is a position; a cursor is a bookmark","kind":"content","session":1,"hash":"8cb97a08","md":"#### [day2#offset-vs-cursor] An offset is a position; a cursor is a bookmark\n\n*Pagination*\n\n- **Offset: \"skip 100, give me 100\".** Newest first, five new items arrive after page 1. Every older item moves down five places, so page 2 starts with five items you already have, and the five new ones are never seen in this pull.\n- **Cursor: \"after the last one I saw\".** The server returns an opaque token naming the last item. New items at the top do not move what comes after it; the next run picks them up.\n\n> **What goes wrong.** Offset paging fails silently: no error, just repeats and gaps that a count by id would reveal.","notes":"Draw it on the board with a list of ten numbered items and a page size of three. Insert two at the top after the first page and let the room find the repeats. Offset paging is fine for a list that does not change while you read it; most live lists change.","minutes":null,"lo":["LO3"]},{"id":"backoff","n":8,"title":"Back off exponentially, add jitter, and stop after a few tries","kind":"content","session":1,"hash":"6a3f2853","md":"#### [day2#backoff] Back off exponentially, add jitter, and stop after a few tries\n\n*Retries*\n\n| Item | Value |\n| --- | --- |\n| Try 1 | 0.5 s |\n| Try 2 | 1 s |\n| Try 3 | 2 s |\n| Try 4 | 4 s |\n| Try 5 | 8 s |\n\n- **Wait** = base × 2try − 1, capped, plus a small random jitter.\n- Jitter spreads clients that failed together, so they do not return together.\n- A 429 with `Retry-After` overrides the formula.","notes":"The waits shown are the formula with a base of half a second, before jitter. In the lab the client calls sleep through a parameter: the notebook passes a fake clock that records waits instead of waiting, so a run with minutes of backoff takes seconds and the log shows every wait. That is also how you test retry code.","minutes":null,"lo":["LO3"]},{"id":"keep-raw","n":9,"title":"Keep every raw response before you parse it","kind":"content","session":1,"hash":"dcfc9e09","md":"#### [day2#keep-raw] Keep every raw response before you parse it\n\n*Raw responses*\n\n- **Replay.** Fix a parsing bug and rerun from the saved pages, without calling the API again.\n- **Audit.** Show what the source said on the day, not what your code made of it.\n- **Debug.** An odd value downstream can be traced to the page it came from.\n\n> **Never the headers.** Save the path, the parameters, the status and the body. The request headers carry the token.","notes":"Ask how long raw pages should be kept: the API's terms may say (the lab's mock says 30 days). Raw pages are also the starting state of lab 2.2: the course supplies a clean pull in labs/data/raw_api/ so nobody depends on finishing lab 2.1.","minutes":null,"lo":["LO3"]},{"id":"rerunnable","n":10,"title":"Write records by key, then the checkpoint: a crash anywhere is safe","kind":"content","session":1,"hash":"121f8819","md":"#### [day2#rerunnable] Write records by key, then the checkpoint: a crash anywhere is safe\n\n*Rerunnable loads*\n\n1. **1 · Fetch** the page after the saved cursor\n2. **2 · Save raw** the page as it came\n3. **3 · Write by id** skip ids already kept\n4. **4 · Checkpoint** the next cursor\n\n- A crash before step 4 means the page is fetched again; step 3 makes that harmless.\n- \"Exactly once\" is proven by counting: records equal unique ids equal the source's count.","notes":"The worst moment to crash is after writing and before checkpointing: the lab stops the run exactly there. Idempotent means doing it twice has the same effect as once. Ask what would happen with an append-only write and no id check: duplicates on every resume.","minutes":null,"lo":["LO3"]},{"id":"tokens-out","n":11,"title":"A token belongs to a person and the environment, never to the code","kind":"content","session":1,"hash":"42e06ba2","md":"#### [day2#tokens-out] A token belongs to a person and the environment, never to the code\n\n*Tokens*\n\n```python\n# file: client.py\nimport os\n\n# set in the shell, or in .env (excluded by .gitignore)\ntoken = os.environ[\"SOURCE_API_TOKEN\"]\nauth = {\"Authorization\": f\"Bearer {token}\"}\nclient = httpx.Client(headers=auth)\n```\n\n- Commit `.env.example` with a placeholder value; never `.env`.\n- A token pasted in a notebook stays in its history and every copy.\n- Tokens are issued per person by the data's owner, who can revoke them.","notes":"The course's mock token in .env.example is a course value that opens only the mock. Segregation of duties: the person who writes the client does not issue or hold the production token; the platform owner issues one per person and revokes it. The lab checks that no saved page or log line contains the token.","minutes":null,"lo":["LO3"]},{"id":"terms-first","n":12,"title":"Read the terms and limits before the first request","kind":"content","session":1,"hash":"74d4e4c0","md":"#### [day2#terms-first] Read the terms and limits before the first request\n\n*Respectful collection*\n\n- **Rate limits:** stay under them; honour `429` and `Retry-After`.\n- **Licence:** what you may keep, share and publish, and how to credit the source.\n- **Retention:** how long raw responses may be kept.\n- **No published limit** is not permission: set your own pace, write it in the code, and say it is yours.\n\n> **In the lab.** The public API task reads the series' licence from its metadata and stops unless it is open; it then paces itself at one request a second, the course's own rule.","notes":"The public API of the lab, the World Bank Indicators API, needs no key, pages by number and records a licence per series; its datasets terms say CC BY 4.0 unless labelled otherwise. It publishes no rate limit, so one request a second is the course's rule, not the provider's. Nothing it returns is stored in the course.\n\nSources: World Bank, API basic call structures; World Bank terms of use for datasets.","minutes":null,"lo":["LO3"]},{"id":"open-data-policy","n":13,"title":"The Open Data Policy asks for machine-readable formats and a licence","kind":"content","session":1,"hash":"ceeb66d9","md":"#### [day2#open-data-policy] The Open Data Policy asks for machine-readable formats and a licence\n\n*National reference*\n\n- **Principle 2 · Open Format and Machine-Readable.** «المبدأ الثاني: الصيغة المفتوحة وإمكانية القراءة آلياً»: data is made available in a machine-readable format that allows automated processing, in widely used file formats such as CSV, XLS, JSON and XML.\n- **Principle 7 · Open Data Licensing in KSA.** «المبدأ السابع: ترخيص البيانات المفتوحة في المملكة»: open data is subject to a licence that sets the conditions of use; using the data indicates acceptance of the licence terms.\n\nNDMO Open Data Policy, National Data Governance Policies, version 1 of 5/5/2020, read from the PDF on sdaia.gov.sa on 25 November 2026. Paraphrased; the Arabic headings are quoted.","notes":"This is the pre-work reading. The policy binds public entities publishing on the National Open Data Portal; for a data user it explains why open data arrives in these formats and with a licence to read first. Ask: which of yesterday's three formats does principle 2 name? CSV and JSON among others; Parquet is not listed, and the policy says \"such as\".\n\nSources: NDMO Open Data Policy, English and Arabic editions, section 5.2.","minutes":null,"lo":["LO3"]},{"id":"check-retry","n":14,"title":"Which response should the client retry?","kind":"quiz","session":1,"hash":"9b40839b","md":"#### [day2#check-retry] Which response should the client retry?\n\n*Checkpoint*\n\n**Question:** A pull from a weather-station network's API gets these four answers on different pages. Which one should it retry after a wait, with no change to the request?\n\n- A. 503 Service Unavailable\n- B. 400 Bad Request: \"limit must be at most 200\"\n- C. 401 Unauthorized\n- D. 404 Not Found for one station","notes":"Answer: 503. The 400 needs a change to the request (a smaller limit), then it is a new request, not a retry. If the room picks 401, return to the tokens slide.","minutes":null,"lo":["LO3"]},{"id":"lab-2-1","n":15,"title":"Every record, exactly once","kind":"lab","session":1,"hash":"2bf67d9a","md":"#### [day2#lab-2-1] Every record, exactly once\n\nLab 2.1 · 100 min\n\nA client for the mock platform API that follows cursors, retries, keeps raw pages and resumes, then a polite public pull\n\n[D2_1_api_client.ipynb](https://sdaiaacademy.github.io/fnd-dat-103/labs/D2_1_api_client.ipynb)\n\n- [ ] Read the API’s terms; load the token from the environment (10 min)\n- [ ] Fetch one page by hand (10 min)\n- [ ] Write fetch_all: cursor, raw pages, checkpoint (25 min)\n- [ ] Add retries for 429 and 5xx; stop on other errors (20 min)\n- [ ] Interrupt, resume, prove exactly once (10 min)\n- [ ] Find what offset paging repeats and misses (10 min)\n- [ ] Read a public API’s licence, then pull every page politely (15 min)\n- [ ] ✱ Stretch: Make the public pull resumable","notes":"AI-tutor. Watch task 3: many write the checkpoint before the records; ask them where a crash then loses data. Task 4: people forget to stop on 401 and loop. The mock runs inside the notebook, so no port or firewall issue. The last task needs the internet; if the venue blocks it, the cell says so and the rest of the lab stands. Numbers to expect are in labs/solutions/answer_key.md.","minutes":null,"lo":[]},{"id":"api-debrief","n":16,"title":"1,200 sessions, exactly once, through 429, 500, 503 and a crash","kind":"content","session":1,"hash":"6eda60bd","md":"#### [day2#api-debrief] 1,200 sessions, exactly once, through 429, 500, 503 and a crash\n\n*Debrief of lab 2.1*\n\n- **16** requests for 12 pages, retries included\n- **4.2 s** waited, on the fake clock\n- **100** records dropped as duplicates on resume\n- **20** ids repeated by offset paging, and 20 never seen\n\nThe course's reference run of lab 2.1 on the mock API (1,200 synthetic sessions). The public pull of that run read 266 rows in 6 pages, matching the API's own total.","notes":"Ask who saw the plain client die with a KeyError on 'data': the crash came from parsing a 429 body, far from the cause. The run log's summary line is the outcome's evidence: records, unique ids and the expected count equal, nothing missing. Public pull counts can change when the publisher revises the series; the check compares with the API's own total.","minutes":null,"lo":["LO3"]},{"id":"s2","n":17,"title":"Schema and validation","kind":"section","session":2,"hash":"ce7c8e3e","md":"#### [day2#s2] Schema and validation\n\n*Session 2*\n\n- Flatten nested records into one table per grain, keys carried down\n- Declare a schema and prove the written files match it\n- Decide per batch whether to load, quarantine rows or reject, and report why","notes":"","minutes":null,"lo":["LO4","LO5"]},{"id":"one-table-per-grain","n":18,"title":"Nested JSON becomes one table per grain, with the key carried down","kind":"content","session":2,"hash":"043b2353","md":"#### [day2#one-table-per-grain] Nested JSON becomes one table per grain, with the key carried down\n\n*Flattening*\n\n```\n# file: appointment.json\n{\"visit_id\": \"V-0193\",\n \"clinic\": {\"id\": \"C04\", \"floor\": 2},\n \"booked_at\": \"2026-11-03T08:40:00+03:00\",\n \"tests\": [{\"code\": \"T-11\", \"result\": 5.4},\n           {\"code\": \"T-27\", \"result\": 0.9}]}\n```\n\n- **Once per visit** (the clinic object): columns of the visits table, `clinic_id`, `clinic_floor`.\n- **A list** (the tests): its own table, one row per test, with `visit_id` on every row.\n- Count after flattening: visits equal records; tests equal the sum of list lengths.","notes":"Parallel example: a clinic visit with its tests, not the lab's charging sessions. Ask what goes wrong with columns test_1, test_2, test_3: a visit with four tests. Ask what goes wrong with one row per test and the clinic repeated: the visit's own numbers are counted once per test when summed.","minutes":null,"lo":["LO4"]},{"id":"declared-schema","n":19,"title":"Declare the schema in code, and cast to it before writing","kind":"content","session":2,"hash":"1c397d64","md":"#### [day2#declared-schema] Declare the schema in code, and cast to it before writing\n\n*Declared types*\n\n```python\n# file: schema.py\nimport pyarrow as pa\n\nVISITS = pa.schema([\n    pa.field(\"visit_id\", pa.string(), nullable=False),\n    pa.field(\"clinic_id\", pa.string(), nullable=False),\n    pa.field(\"booked_at\", pa.timestamp(\"us\", tz=\"UTC\"), nullable=False),\n    pa.field(\"month\", pa.string(), nullable=False),   # the partition column\n])\ntable = pa.Table.from_pandas(visits, schema=VISITS, preserve_index=False)\n```\n\n- A value that cannot be cast fails here, at the boundary, not in next month's report.","notes":"Point at the time zone in the type: a timestamp column that says UTC cannot silently hold local times. Nullable=False turns \"missing\" into an error at cast time. Source: Apache Arrow Python documentation.","minutes":null,"lo":["LO4"]},{"id":"check-written","n":20,"title":"Prove the files match the declaration by reading their schema back","kind":"content","session":2,"hash":"b5bb33fa","md":"#### [day2#check-written] Prove the files match the declaration by reading their schema back\n\n*Proof*\n\n1. **1 · Write** partitioned by the declared column\n2. **2 · Read the schema** of one written file\n3. **3 · Compare** with the declaration, minus the partition column\n4. **4 · Count** rows read back from the whole folder\n\n> **Why minus one column.** In hive partitioning the partition value lives in the folder name; readers add it back as a column.","notes":"This is the evidence of LO4: files whose schema matches the declared one. Printing rows is not proof: two time zones or a float and a decimal can print alike. pyarrow.parquet.read_schema reads only the footer, so the check is cheap.","minutes":null,"lo":["LO4"]},{"id":"two-layers","n":21,"title":"Check each record, then check the table","kind":"content","session":2,"hash":"48c3e422","md":"#### [day2#two-layers] Check each record, then check the table\n\n*Validation*\n\n| Layer | Rules | Example tool |\n| --- | --- | --- |\n| **Record**, one at a time | Required fields, types, patterns (a time with its offset), allowed values | JSON Schema |\n| **Table**, the batch as a whole | Unique keys, ranges, one column against another, values that must exist in a register | Pandera |\n\n- Record checks run before flattening, on the raw JSON.\n- Table checks run on the typed table, after the cast.","notes":"A primary key in a database (FND-DAT-101) is one kind of table check; here the checks run before anything reaches a database. Tools are examples: plain assertions in Python fill the same slot for a small batch. Sources: JSON Schema specification; Pandera documentation.","minutes":null,"lo":["LO5"]},{"id":"json-schema-example","n":22,"title":"A JSON Schema states what one record must be","kind":"content","session":2,"hash":"f9270e9d","md":"#### [day2#json-schema-example] A JSON Schema states what one record must be\n\n*Record checks*\n\n```\n# file: visit.schema.json\n{\"type\": \"object\",\n \"required\": [\"visit_id\", \"clinic\", \"booked_at\", \"tests\"],\n \"properties\": {\n   \"visit_id\": {\"type\": \"string\", \"pattern\": \"^V-[0-9]{4}$\"},\n   \"booked_at\": {\"type\": \"string\",\n     \"pattern\": \"^[0-9-]{10}T[0-9:]{8}(Z|[+-][0-9]{2}:[0-9]{2})$\"},\n   \"tests\": {\"type\": \"array\", \"minItems\": 1}}}\n```\n\n- Each error names its rule (`required`, `type`, `pattern`) and its path: the report's reason.","notes":"Parallel example: the clinic visits. Show jsonschema's iter_errors on a record with booked_at cut to \"2026-11-03T08:40:00\": one pattern error at path booked_at. A schema is a document: version it, and add optional fields without breaking old senders (the lab's stretch).","minutes":null,"lo":["LO5"]},{"id":"pandera-example","n":23,"title":"Named table checks give every failing row a reason","kind":"content","session":2,"hash":"96c1c273","md":"#### [day2#pandera-example] Named table checks give every failing row a reason\n\n*Table checks*\n\n```python\n# file: checks.py\nimport pandera.pandas as pa\n\nchecks = pa.DataFrameSchema(\n    {\"visit_id\": pa.Column(None, pa.Check(lambda s: ~s.duplicated(keep=False), name=\"duplicate_key\")),\n     \"clinic_id\": pa.Column(None, pa.Check(lambda s: s.isin(CLINICS), name=\"unknown_clinic\"))},\n    checks=[pa.Check(lambda df: df[\"seen_at\"] >= df[\"booked_at\"], name=\"seen_before_booked\")])\nchecks.validate(visits, lazy=True)   # raises SchemaErrors listing every failure\n```","notes":"lazy=True collects every failure instead of stopping at the first; err.failure_cases has the check name and the row index, which is what a quarantine file needs. Name each check: built-in checks report a generated description, which is harder for an owner to read.","minutes":null,"lo":["LO5"]},{"id":"fail-or-quarantine","n":24,"title":"Reject the batch, or quarantine rows: decide by written rules","kind":"content","session":2,"hash":"58a6f11e","md":"#### [day2#fail-or-quarantine] Reject the batch, or quarantine rows: decide by written rules\n\n*The decision*\n\n1. **The interface changed** a required field missing from nearly every record: reject the batch, name the field\n2. **Some rows break the rules** quarantine each with its reason, keep the rest\n3. **Too many rows break** above the organisation's threshold: reject the batch\n4. **Otherwise** load the valid rows","notes":"The thresholds are choices, not standards: the lab uses 90% for a changed interface and 5% for \"too many\", the case organisation's own rules. What matters is that they are written down and applied the same way every time. Ask why \"too many\" rejects even the good rows: the same fault may hide in rows that passed.","minutes":null,"lo":["LO5"]},{"id":"owners-see","n":25,"title":"Quarantine so that owners see what failed, and fix it at the source","kind":"content","session":2,"hash":"9c55465f","md":"#### [day2#owners-see] Quarantine so that owners see what failed, and fix it at the source\n\n*Quarantine*\n\n- **The loader.** Writes each row with its rule and meaning; does not edit or release rows.\n- **The data owner.** Corrects the source and sends the rows again.\n- **A second person.** Reviews any release of quarantined rows.\n\n> **Next.** Data contracts, with versions and service levels between sender and receiver, follow in DEV-DAT-204.","notes":"Segregation of duties: whoever writes the checks should not also be the one who waives them. Deleting bad rows hides the fault from the people who can fix it; silently repairing them hides it too. The quarantine file is part of the responsible-use statement of this course.","minutes":null,"lo":["LO5"]},{"id":"check-quarantine","n":26,"title":"Load, quarantine or reject?","kind":"quiz","session":2,"hash":"aeebb253","md":"#### [day2#check-quarantine] Load, quarantine or reject?\n\n*Checkpoint*\n\n**Question:** A library's loans batch has 400 rows. Twelve rows (3%) name a branch code that is not in the branch register; every other check passes. The written rules: reject on a changed interface, or above 5% quarantined.\n\n- A. Reject the whole batch\n- B. Map the twelve codes to the nearest valid branch and load all\n- C. Load 388 rows and quarantine 12 with their reason\n- D. Load 388 rows and drop the 12","notes":"Answer: load 388, quarantine 12. If the room picks \"map to the nearest branch\", ask who signs off that guess. If it picks \"drop\", ask how the branch team would ever learn.","minutes":null,"lo":["LO5"]},{"id":"lab-2-2","n":27,"title":"Flatten, write, validate","kind":"lab","session":2,"hash":"517fd64a","md":"#### [day2#lab-2-2] Flatten, write, validate\n\nLab 2.2 · 90 min\n\nRaw API pages flattened to typed tables, written as day-partitioned Parquet, then five batches loaded, quarantined or rejected\n\n[D2_2_flatten_validate.ipynb](https://sdaiaacademy.github.io/fnd-dat-103/labs/D2_2_flatten_validate.ipynb)\n\n- [ ] Check every raw record against the JSON Schema (15 min)\n- [ ] Flatten into sessions and readings tables (20 min)\n- [ ] Write day-partitioned Parquet with the declared schema; check it (15 min)\n- [ ] Declare the table checks with Pandera (15 min)\n- [ ] Validate five batches and write the report (20 min)\n- [ ] Read the quarantine file as its owner (5 min)\n- [ ] ✱ Stretch: Add an optional field (schema version 2) without breaking version 1","notes":"AI-tutor. The lab starts from the supplied raw pages, so it does not depend on lab 2.1. Watch task 2: people forget to carry session_id into the readings table. Task 3: the schema comparison must leave out the partition column. Task 5: the check prints whether every seeded defect was caught and every decision is right, without showing the key. The key is labs/solutions/batch_key.json.","minutes":null,"lo":[]},{"id":"validate-debrief","n":28,"title":"Two batches rejected, two partly quarantined, the clean one loaded whole","kind":"content","session":2,"hash":"0ee4a605","md":"#### [day2#validate-debrief] Two batches rejected, two partly quarantined, the clean one loaded whole\n\n*Debrief of lab 2.2*\n\n| Batch | Decision | Why |\n| --- | --- | --- |\n| 1 | load 200 | clean |\n| 2 | load 197, quarantine 3 | a missing field, a wrong type, a time without offset |\n| 3 | load 194, quarantine 6 | a duplicated key, two out-of-range values, an end before its start, an unknown station |\n| 4 | reject | energy_kwh renamed in every record |\n| 5 | reject, 20 rows to quarantine | 10% of times without offsets, above 5% |","notes":"Show after the lab. The written files matched the declared schema; 1,200 sessions and 4,187 readings; 14 day partitions. Batch 3 quarantines 6 rows for 5 defects because the duplicated session is two rows. Ask which decision people disagreed with and which rule they would write differently.","minutes":null,"lo":["LO4","LO5"]},{"id":"capstone-brief","n":29,"title":"Your follow-up task: a checked ingestion script, run live on an unseen batch","kind":"content","session":2,"hash":"50a6ebb5","md":"#### [day2#capstone-brief] Your follow-up task: a checked ingestion script, run live on an unseen batch\n\n*The capstone*\n\n- One script: read the register in its real encoding, convert a vendor log to UTC, validate the sessions, write typed Parquet, quarantine and report.\n- Practise on `labs/capstone/practice/` and on batches of your own seeds.\n- Hand in a public GitHub repository link within two weeks; no token or `.env` in it.\n\n- **On the day.** The assessor generates a batch you have not seen. You run the script live for six minutes, then answer five minutes of questions.","notes":"The brief is labs/capstone/README.md. AI-full: any assistant may help write the script, but the live run tests whether the participant can explain each decision. Passing needs the capstone batch loaded or rejected for the correct reasons.","minutes":null,"lo":["LO1","LO2","LO3","LO4","LO5"]},{"id":"wrap-up","n":30,"title":"Three things to keep","kind":"content","session":2,"hash":"fccc2601","md":"#### [day2#wrap-up] Three things to keep\n\n*Day 2 · Wrap-up*\n\n- **Pull politely, prove completeness.** Terms first, cursor, backoff, raw pages, and a count that proves exactly once.\n- **Declare, then prove.** A schema in code, a cast at the boundary, and the written schema read back.\n- **Stop bad batches visibly.** Reject or quarantine by written rules, and send the reasons to the owner.","notes":"Then the supervised check: 60 minutes, without assistants (5 for rules and devices away, 50 for the check, 5 for collection). Its items are not in the course repository.","minutes":null,"lo":[]},{"id":"next","n":31,"title":"The supervised check now; the capstone in two weeks","kind":"content","session":2,"hash":"6531516b","md":"#### [day2#next] The supervised check now; the capstone in two weeks\n\n*Next*\n\n- The check is without assistants; bring only the device that shows it.\n- Build the ingestion script in the follow-up task, and test it on several seeds.\n- Bring a terminal that runs it, and your repository link, to the capstone session.","notes":"The follow-up task is tracked: ask participants to share their repository link at the halfway point so a trainer can open it before the capstone session.","minutes":null,"lo":[]}],"activities":[{"id":"review-day1-q1","slide":"review-day1","type":"single","prompt":"A water utility's meter readings, logged without offsets, run exactly 240 minutes ahead of the billing system's UTC times on every day of the year. What is the fault?","options":[{"key":"A","text":"A clock in a zone that has daylight saving time"},{"key":"B","text":"A file saved in a legacy code page"},{"key":"C","text":"A CSV that lost the column's type"},{"key":"D","text":"A clock on a fixed offset, read as UTC"}],"correct":[3],"explanation":"A gap that never changes is a fixed offset: localise every time to that offset and convert to UTC.","misconceptions":["Expects daylight saving to give a constant gap: its gap changes when the clocks change","Confuses text faults with time faults: an encoding changes characters, not hours","Assumes a format can shift values: CSV stores the text the device wrote",""],"lo":["LO2"]},{"id":"check-retry-q1","slide":"check-retry","type":"single","prompt":"A pull from a weather-station network's API gets these four answers on different pages. Which one should it retry after a wait, with no change to the request?","options":[{"key":"A","text":"503 Service Unavailable"},{"key":"B","text":"400 Bad Request: \"limit must be at most 200\""},{"key":"C","text":"401 Unauthorized"},{"key":"D","text":"404 Not Found for one station"}],"correct":[0],"explanation":"A 503 reports a temporary failure of the server: the same request can succeed later, after a backoff.","misconceptions":["","Treats a client error as temporary: a malformed parameter fails the same way every time","Treats an authorisation failure as temporary: retrying a bad token adds load and may lock it","Treats a missing resource as an outage: the station id does not exist, and asking again will not create it"],"lo":["LO3"]},{"id":"check-quarantine-q1","slide":"check-quarantine","type":"single","prompt":"A library's loans batch has 400 rows. Twelve rows (3%) name a branch code that is not in the branch register; every other check passes. The written rules: reject on a changed interface, or above 5% quarantined.","options":[{"key":"A","text":"Reject the whole batch"},{"key":"B","text":"Map the twelve codes to the nearest valid branch and load all"},{"key":"C","text":"Load 388 rows and quarantine 12 with their reason"},{"key":"D","text":"Load 388 rows and drop the 12"}],"correct":[2],"explanation":"3% is under the written threshold, so the valid rows load and the twelve go to the branch team with the reason, to fix at the source.","misconceptions":["Treats any defect as a reason to stop: the rules reject only a changed interface or more than 5%","Repairs data the loader does not own: the branch team must say which code was meant","","Hides the fault from its owner: dropped rows cannot be corrected and resent"],"lo":["LO5"]}],"ai":{"context":{"course":"../context/course.md","courseJs":"../context/course.js","day":"day2.md","llms":"../llms.txt"},"tasks":[],"tools":[]},"bridge":{"allowedOrigins":[]},"features":{},"strings":{}}</script>
+<script src="../_engine/academy.js"></script>
+</body>
+</html>

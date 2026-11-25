@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en" dir="ltr" data-ax="page" data-track="foundations">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Data Formats, Interfaces and Quality Checks · SDAIA Academy</title>
+<meta name="generator" content="SDAIA Academy engine 1.0.0">
+<meta name="description" content="Move data between files, interfaces and tables without losing or corrupting it, and stop a bad batch at the boundary">
+<link rel="icon" href="_engine/icon.svg">
+<link rel="alternate" type="text/markdown" href="index.md">
+<link rel="describedby" href="llms.txt">
+<link rel="stylesheet" href="_engine/academy.css">
+</head>
+<body>
+<header>
+<div class="wrap">
+<div class="top"><div class="logo" id="logo"></div><nav><a href="slides/day1.html">Slides</a><a href="practice.html">Practice</a><a href="index.md" type="text/markdown">Markdown</a></nav></div>
+<div class="kicker">Data &amp; AI Foundations Track · SDAIA Academy · FND-DAT-103</div>
+<h1>Data Formats, Interfaces and Quality Checks<span class="sub ar" lang="ar" dir="rtl">صيغ البيانات وواجهاتها وفحوص جودتها</span></h1>
+<p>Move data between files, interfaces and tables without losing or corrupting it, and stop a bad batch at the boundary</p>
+<div class="meta"><span class="track">Data &amp; AI Foundations Track</span><span>2 teaching days + capstone day</span><span>16 hours</span><span>Level 100</span></div>
+</div>
+</header>
+<main class="wrap">
+<h2>About the course</h2>
+<p>Participants move data between files, interfaces and tables without losing or corrupting it. They compare delimited, JSON Lines and columnar files, repair encoding and time-zone faults, write a paginated API client with retries, flatten nested JSON and declare a schema whose checks stop a bad batch from loading.</p>
+<p><b>Who it is for:</b> Beginners. Anyone starting technical data or AI work, including future analysts, data scientists, data engineers and AI engineers who can code but have not yet worked with messy real data.</p>
+<p><b>Format:</b> Workshop: two days with labs, a short pre-work task and a tracked follow-up task</p>
+<h2>The case study</h2>
+<div class="note info"><b>The charging network.</b> The charging network is a fictional private operator of 40 public fast-charging stations for electric vehicles in one unnamed city, whose charging sessions reach the data team as charger logs from two vendors, legacy exports from the station team and pages of the charge-point platform API. Every file is synthetic and generated with a fixed seed: 200,000 sessions for the format comparison, six damaged files, 1,200 nested sessions behind a mock API with injected faults, five batches with seeded defects, and capstone batches an assessor generates from a seed.</div>
+<h2>The course</h2>
+<div class="day">
+<div class="day-head c-teal"><div><div class="t">Day 1 · 2 sessions · 2 labs</div><h3>Files: formats, text and time</h3></div><a class="btn" href="slides/day1.html">Open the slides</a></div>
+<div class="scroll"><table>
+<tr><th>Session</th><th>Topic</th><th>Lab</th></tr>
+<tr><td>1</td><td><b>File formats</b><br>Delimited dialects, JSON and JSON Lines, columnar files with partitions, and in-memory interchange, compared by measurement<ul><li>Name the dialect settings a delimited file needs: delimiter, quoting, encoding, line ending</li><li>Explain how columnar files store types, compress columns and read only what a query needs</li><li>Measure size, read time and type fidelity of one dataset in three formats</li></ul></td><td><a href="labs/D1_1_three_formats.ipynb">Lab 1.1 · One dataset, three formats</a> <span class="muted">(80 min)</span><br><a href="https://colab.research.google.com/github/SDAIAAcademy/fnd-dat-103/blob/main/labs/D1_1_three_formats.ipynb">Open in Colab</a></td></tr>
+<tr><td>2</td><td><b>Text and time</b><br>Bytes and characters, UTF-8 and legacy Arabic code pages, byte order marks, offsets, UTC and daylight saving<ul><li>Tell bytes from characters and read a file’s first bytes for its encoding</li><li>Recognise the symptom of a wrong code page, a byte order mark, double encoding and UTF-16</li><li>Convert local times without offsets to UTC, across a daylight-saving change</li></ul></td><td><a href="labs/D1_2_damaged_files.ipynb">Lab 1.2 · Six damaged files</a> <span class="muted">(90 min)</span><br><a href="https://colab.research.google.com/github/SDAIAAcademy/fnd-dat-103/blob/main/labs/D1_2_damaged_files.ipynb">Open in Colab</a></td></tr>
+</table></div>
+</div>
+<div class="day">
+<div class="day-head c-cyan"><div><div class="t">Day 2 · 2 sessions · 2 labs</div><h3>Interfaces and the boundary</h3></div><a class="btn" href="slides/day2.html">Open the slides</a></div>
+<div class="scroll"><table>
+<tr><th>Session</th><th>Topic</th><th>Lab</th></tr>
+<tr><td>1</td><td><b>Interfaces</b><br>Status codes and errors, offset and cursor pagination, rate limits, retries with backoff, raw responses, checkpoints and tokens kept out of code<ul><li>Decide from a status code whether to retry, wait or stop</li><li>Explain why cursor pagination survives inserts that offset pagination does not</li><li>Build a rerunnable pull with raw responses, a checkpoint and idempotent writes</li></ul></td><td><a href="labs/D2_1_api_client.ipynb">Lab 2.1 · Every record, exactly once</a> <span class="muted">(100 min)</span><br><a href="https://colab.research.google.com/github/SDAIAAcademy/fnd-dat-103/blob/main/labs/D2_1_api_client.ipynb">Open in Colab</a></td></tr>
+<tr><td>2</td><td><b>Schema and validation</b><br>Nested JSON flattened to typed tables, declared types, ranges and keys, partitioned Parquet, and failing a load versus quarantining rows<ul><li>Flatten nested records into one table per grain, keys carried down</li><li>Declare a schema and prove the written files match it</li><li>Decide per batch whether to load, quarantine rows or reject, and report why</li></ul></td><td><a href="labs/D2_2_flatten_validate.ipynb">Lab 2.2 · Flatten, write, validate</a> <span class="muted">(90 min)</span><br><a href="https://colab.research.google.com/github/SDAIAAcademy/fnd-dat-103/blob/main/labs/D2_2_flatten_validate.ipynb">Open in Colab</a></td></tr>
+</table></div>
+</div>
+<div class="day">
+<div class="day-head c-amber"><div><div class="t">Capstone</div><h3>Live ingestion run</h3></div><a class="btn" href="slides/capstone.html">Open the slides</a></div>
+<div class="scroll"><table><tr><td>Each participant runs the ingestion script live on a batch the assessor generates, then answers questions</td></tr></table></div>
+</div>
+<h2>Capstone</h2>
+<div class="two">
+<div><p>A checked ingestion script, run live on a batch the assessor supplies</p><p><b>What you submit:</b> An individual task, submitted as a public GitHub repository link within two weeks of the workshop: the ingestion script, its declared schemas, a README with its rules and how to run it, and the report of a run on the practice batch. No token, key or .env file in the repository. The live run uses a batch the assessor generates on the day from a seed of their choice.</p><p><b>Format:</b> 6 min talk and demo · 5 min Q&amp;A</p></div>
+<div><h3>Rubric</h3><div class="bar c-teal"><span>Every input read correctly: encodings and times normalised to UTF-8 and UTC, each repair logged<i style="--w:80%"></i></span><b>20%</b></div><div class="bar c-cyan"><span>Typed, partitioned output whose written schema matches the declared one<i style="--w:60%"></i></span><b>15%</b></div><div class="bar c-coral"><span>Record and table checks applied with stated rules: load, quarantine or reject<i style="--w:80%"></i></span><b>20%</b></div><div class="bar c-purple"><span>Rerunnable: a second run on the same batch gives the same files, the input kept untouched<i style="--w:40%"></i></span><b>10%</b></div><div class="bar c-amber"><span>A report and quarantine file the data owner can act on; no token in the repository<i style="--w:40%"></i></span><b>10%</b></div><div class="bar c-green"><span>Live run: the assessor’s batch loaded or rejected for the correct reasons, and explained<i style="--w:100%"></i></span><b>25%</b></div></div>
+</div>
+<h2>Outcomes</h2>
+<p>By the end of the course, participants can:</p>
+<div class="day"><div class="scroll"><table>
+<tr><th></th><th>Outcomes</th><th>Level</th><th>Evidence</th></tr>
+<tr><td><b>LO1</b></td><td>Compare delimited, JSON Lines and columnar files on size, read time and type fidelity, given one dataset in each format</td><td>Awareness</td><td>a measured comparison table</td></tr>
+<tr><td><b>LO2</b></td><td>Explain how encodings, byte order marks and time zones corrupt data, and identify each symptom, given six damaged files</td><td>Awareness</td><td>a diagnosis correct on five of six</td></tr>
+<tr><td><b>LO3</b></td><td>Implement an API client that follows cursor pagination, respects rate limits, retries with backoff and keeps raw responses, given a mock API with injected errors</td><td>Applied</td><td>a run log showing every record retrieved exactly once</td></tr>
+<tr><td><b>LO4</b></td><td>Convert nested JSON into typed tables written as partitioned columnar files, given the raw responses</td><td>Applied</td><td>files whose schema matches the declared one</td></tr>
+<tr><td><b>LO5</b></td><td>Implement validation checks that stop a load when a batch breaks the declared schema, given batches with seeded defects</td><td>Applied</td><td>a report that catches every defect and passes a clean batch</td></tr>
+</table></div></div>
+<h2>Tools</h2>
+<div class="grid">
+<div class="card c-teal"><h3>Columnar file reading and writing</h3><p>Apache Arrow with Parquet · DuckDB</p></div>
+<div class="card c-cyan"><h3>HTTP client</h3><p>httpx · requests</p></div>
+<div class="card c-coral"><h3>Schema validation</h3><p>JSON Schema · Pandera</p></div>
+<div class="card c-purple"><h3>Mock API</h3><p>an Academy mock service in a container · a local FastAPI server</p></div>
+</div>
+<h2>Before you start</h2>
+<h3>Prerequisites</h3>
+<ul><li>FND-DAT-102 Data Wrangling with DataFrames</li><li>Writes Python functions and handles exceptions (FND-PRG-101 or equivalent)</li></ul>
+<div class="note tip">The labs are notebooks. Open each one in Google Colab from the table above, or clone the repository and run them locally.</div>
+<h2>Sources</h2>
+<h3>National references</h3>
+<ul><li><a href="https://sdaia.gov.sa/en/SDAIA/about/Documents/OpenDataPolicy.pdf">National Data Management Office: Open Data Policy (National Data Governance Policies, version 1, 5/5/2020)</a></li><li><a href="https://sdaia.gov.sa/ar/SDAIA/about/Documents/OpenDataPolicyAr.pdf">مكتب إدارة البيانات الوطنية: سياسة البيانات المفتوحة</a></li><li><a href="https://sdaia.gov.sa/en/SDAIA/about/Pages/RegulationsAndPolicies.aspx">SDAIA: Regulations and policies (index page)</a></li></ul>
+<h3>Formats and standards</h3>
+<ul><li><a href="https://www.rfc-editor.org/rfc/rfc4180">RFC 4180: Common Format and MIME Type for Comma-Separated Values (CSV) Files</a></li><li><a href="https://www.rfc-editor.org/rfc/rfc8259">RFC 8259: The JavaScript Object Notation (JSON) Data Interchange Format</a></li><li><a href="https://jsonlines.org/">JSON Lines</a></li><li><a href="https://www.rfc-editor.org/rfc/rfc3339">RFC 3339: Date and Time on the Internet: Timestamps</a></li><li><a href="https://www.rfc-editor.org/rfc/rfc9110">RFC 9110: HTTP Semantics (status codes, Retry-After)</a></li><li><a href="https://www.rfc-editor.org/rfc/rfc6585">RFC 6585: Additional HTTP Status Codes (429 Too Many Requests)</a></li><li><a href="https://parquet.apache.org/docs/file-format/">Apache Parquet: file format documentation</a></li><li><a href="https://docs.python.org/3/library/zoneinfo.html">Python documentation: zoneinfo, IANA time zone support (fold and ambiguous times)</a></li><li><a href="https://docs.python.org/3/library/codecs.html#standard-encodings">Python documentation: codecs, standard encodings (cp1256, utf-8-sig, utf-16)</a></li></ul>
+<h3>Tools (examples of each slot)</h3>
+<ul><li><a href="https://arrow.apache.org/docs/python/">Apache Arrow: Python documentation (pyarrow, datasets and partitioning)</a></li><li><a href="https://duckdb.org/docs/stable/data/parquet/overview">DuckDB: reading Parquet files</a></li><li><a href="https://duckdb.org/docs/stable/guides/python/sql_on_arrow">DuckDB: SQL on Apache Arrow (querying Arrow tables held in Python variables)</a></li><li><a href="https://www.python-httpx.org/">HTTPX</a></li><li><a href="https://requests.readthedocs.io/">Requests</a></li><li><a href="https://json-schema.org/specification">JSON Schema: specification (draft 2020-12)</a></li><li><a href="https://pandera.readthedocs.io/">Pandera documentation</a></li><li><a href="https://fastapi.tiangolo.com/tutorial/testing/">FastAPI: testing with TestClient</a></li></ul>
+<h3>The public open-data API of lab 2.1</h3>
+<ul><li><a href="https://datahelpdesk.worldbank.org/knowledgebase/articles/898581-api-basic-call-structures">World Bank: API basic call structures (page and per_page)</a></li><li><a href="https://www.worldbank.org/ext/en/legal/terms-conditions/datasets">World Bank: terms of use for datasets (CC BY 4.0 unless labelled otherwise)</a></li><li><a href="https://datacatalog.worldbank.org/public-licenses">World Bank Data Catalog: public licenses</a></li></ul>
+<h2>Files and links</h2>
+<div class="files">
+<a href="practice.html"><b>practice.html</b><span>Practice questions with feedback</span></a>
+<a href="index.md"><b>index.md</b><span>This page as Markdown, for an AI assistant</span></a>
+<a href="llms.txt"><b>llms.txt</b><span>The course for AI assistants (llms.txt)</span></a>
+<a href="https://github.com/SDAIAAcademy/fnd-dat-103"><b>SDAIAAcademy/fnd-dat-103</b><span>The course repository</span></a>
+</div>
+</main>
+<footer><div class="wrap">SDAIA Academy · Data &amp; AI Foundations Track · Data Formats, Interfaces and Quality Checks<br><span class="muted">Course version 2027.1.0 · engine 1.0.0 · built 2026-11-25 · commit 45af7a9</span></div></footer>
+<script type="application/json" id="academy-data">{"v":1,"engine":"1.0.0","build":{"at":"2026-11-25T06:16:18Z","version":"2027.1.0","commit":"45af7a9"},"course":{"id":"fnd-dat-103","code":"FND-DAT-103","title":"Data Formats, Interfaces and Quality Checks","track":"foundations","lang":"en","dir":"ltr","url":"https://sdaiaacademy.github.io/fnd-dat-103/","repo":"SDAIAAcademy/fnd-dat-103","home":"index.html"},"ai":{"context":{"course":"context/course.md","courseJs":"context/course.js","day":null,"llms":"llms.txt"},"tasks":[],"tools":[]},"features":{},"strings":{}}</script>
+<script src="_engine/academy.js"></script>
+</body>
+</html>

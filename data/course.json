@@ -1,0 +1,510 @@
+{
+  "v": 1,
+  "engine": "1.0.0",
+  "build": {
+    "at": "2026-11-25T06:16:18Z",
+    "version": "2027.1.0",
+    "commit": "45af7a9"
+  },
+  "lang": "en",
+  "dir": "ltr",
+  "langs": [
+    "en"
+  ],
+  "alt": {},
+  "course": {
+    "id": "fnd-dat-103",
+    "code": "FND-DAT-103",
+    "version": "2027.1.0",
+    "title": "Data Formats, Interfaces and Quality Checks",
+    "tagline": "Move data between files, interfaces and tables without losing or corrupting it, and stop a bad batch at the boundary",
+    "description": "Participants move data between files, interfaces and tables without losing or corrupting it. They compare delimited, JSON Lines and columnar files, repair encoding and time-zone faults, write a paginated API client with retries, flatten nested JSON and declare a schema whose checks stop a bad batch from loading.",
+    "track": "foundations",
+    "track_name": "Data & AI Foundations Track",
+    "level": 100,
+    "badge": null,
+    "audience": "Beginners. Anyone starting technical data or AI work, including future analysts, data scientists, data engineers and AI engineers who can code but have not yet worked with messy real data.",
+    "prerequisites": [
+      "FND-DAT-102 Data Wrangling with DataFrames",
+      "Writes Python functions and handles exceptions (FND-PRG-101 or equivalent)"
+    ],
+    "url": "https://sdaiaacademy.github.io/fnd-dat-103/",
+    "repo": "SDAIAAcademy/fnd-dat-103",
+    "home": "../index.html",
+    "format": "workshop",
+    "format_note": "Workshop: two days with labs, a short pre-work task and a tracked follow-up task",
+    "shape": "2 teaching days + capstone day",
+    "hours": {
+      "instruction": 4,
+      "lab": 6,
+      "guided_self_study": 3,
+      "assessment": 1,
+      "capstone": 2,
+      "total": 16
+    },
+    "unit": "day",
+    "outcomes": [
+      {
+        "id": "LO1",
+        "text": "Compare delimited, JSON Lines and columnar files on size, read time and type fidelity, given one dataset in each format",
+        "level": "Awareness",
+        "evidence": "a measured comparison table"
+      },
+      {
+        "id": "LO2",
+        "text": "Explain how encodings, byte order marks and time zones corrupt data, and identify each symptom, given six damaged files",
+        "level": "Awareness",
+        "evidence": "a diagnosis correct on five of six"
+      },
+      {
+        "id": "LO3",
+        "text": "Implement an API client that follows cursor pagination, respects rate limits, retries with backoff and keeps raw responses, given a mock API with injected errors",
+        "level": "Applied",
+        "evidence": "a run log showing every record retrieved exactly once"
+      },
+      {
+        "id": "LO4",
+        "text": "Convert nested JSON into typed tables written as partitioned columnar files, given the raw responses",
+        "level": "Applied",
+        "evidence": "files whose schema matches the declared one"
+      },
+      {
+        "id": "LO5",
+        "text": "Implement validation checks that stop a load when a batch breaks the declared schema, given batches with seeded defects",
+        "level": "Applied",
+        "evidence": "a report that catches every defect and passes a clean batch"
+      }
+    ],
+    "case_study": {
+      "name": "The charging network",
+      "summary": "The charging network is a fictional private operator of 40 public fast-charging stations for electric vehicles in one unnamed city, whose charging sessions reach the data team as charger logs from two vendors, legacy exports from the station team and pages of the charge-point platform API. Every file is synthetic and generated with a fixed seed: 200,000 sessions for the format comparison, six damaged files, 1,200 nested sessions behind a mock API with injected faults, five batches with seeded defects, and capstone batches an assessor generates from a seed."
+    },
+    "days": [
+      {
+        "id": "day1",
+        "kind": "day",
+        "n": 1,
+        "number": 1,
+        "label": "Day 1",
+        "title": "Files: formats, text and time",
+        "subtitle": "What a file promises, what it loses, and how bytes and clocks corrupt data",
+        "shape": "2 sessions · 2 labs",
+        "deck": "../slides/day1.html",
+        "md": "../slides/day1.md",
+        "url": "https://sdaiaacademy.github.io/fnd-dat-103/slides/day1.html",
+        "sessions": [
+          {
+            "n": 1,
+            "label": "Session 1",
+            "title": "File formats",
+            "summary": "Delimited dialects, JSON and JSON Lines, columnar files with partitions, and in-memory interchange, compared by measurement",
+            "outcomes": [
+              "Name the dialect settings a delimited file needs: delimiter, quoting, encoding, line ending",
+              "Explain how columnar files store types, compress columns and read only what a query needs",
+              "Measure size, read time and type fidelity of one dataset in three formats"
+            ],
+            "lo": [
+              "LO1"
+            ],
+            "minutes": 145,
+            "lab": {
+              "id": "1.1",
+              "title": "One dataset, three formats",
+              "summary": "The same 200,000 charging sessions written as CSV, JSON Lines and Parquet, measured for size, read time and type fidelity, and queried with DuckDB",
+              "minutes": 80,
+              "href": "../labs/D1_1_three_formats.ipynb",
+              "steps": [
+                {
+                  "text": "Run the setup cell and generate the sessions table",
+                  "minutes": 5
+                },
+                {
+                  "text": "Write CSV, JSON Lines and Parquet and compare their sizes",
+                  "minutes": 15
+                },
+                {
+                  "text": "Read each file back and time it",
+                  "minutes": 15
+                },
+                {
+                  "text": "Check type fidelity column by column",
+                  "minutes": 20
+                },
+                {
+                  "text": "Query the Parquet file with DuckDB, and hand it an Arrow table",
+                  "minutes": 10
+                },
+                {
+                  "text": "Write the comparison table and a recommendation",
+                  "minutes": 15
+                }
+              ],
+              "stretch": "Write the Parquet partitioned by day and query one partition"
+            }
+          },
+          {
+            "n": 2,
+            "label": "Session 2",
+            "title": "Text and time",
+            "summary": "Bytes and characters, UTF-8 and legacy Arabic code pages, byte order marks, offsets, UTC and daylight saving",
+            "outcomes": [
+              "Tell bytes from characters and read a file’s first bytes for its encoding",
+              "Recognise the symptom of a wrong code page, a byte order mark, double encoding and UTF-16",
+              "Convert local times without offsets to UTC, across a daylight-saving change"
+            ],
+            "lo": [
+              "LO2"
+            ],
+            "minutes": 150,
+            "lab": {
+              "id": "1.2",
+              "title": "Six damaged files",
+              "summary": "Six files from the station team and two charger vendors diagnosed from their bytes and times, repaired, checked against the platform and logged",
+              "minutes": 90,
+              "href": "../labs/D1_2_damaged_files.ipynb",
+              "steps": [
+                {
+                  "text": "Run the setup cell and look at the six files as bytes",
+                  "minutes": 10
+                },
+                {
+                  "text": "Write the diagnosis sheet before any repair",
+                  "minutes": 20
+                },
+                {
+                  "text": "Repair the four text files",
+                  "minutes": 25
+                },
+                {
+                  "text": "Convert Vendor A’s times to UTC",
+                  "minutes": 10
+                },
+                {
+                  "text": "Convert Vendor B’s times to UTC across the clock change",
+                  "minutes": 15
+                },
+                {
+                  "text": "Check against the platform and write the repair log",
+                  "minutes": 10
+                }
+              ],
+              "stretch": "Guess the code page of a file without being told"
+            }
+          }
+        ]
+      },
+      {
+        "id": "day2",
+        "kind": "day",
+        "n": 2,
+        "number": 2,
+        "label": "Day 2",
+        "title": "Interfaces and the boundary",
+        "subtitle": "Pull every record exactly once, then let only a valid batch through",
+        "shape": "2 sessions · 2 labs",
+        "deck": "../slides/day2.html",
+        "md": "../slides/day2.md",
+        "url": "https://sdaiaacademy.github.io/fnd-dat-103/slides/day2.html",
+        "sessions": [
+          {
+            "n": 1,
+            "label": "Session 1",
+            "title": "Interfaces",
+            "summary": "Status codes and errors, offset and cursor pagination, rate limits, retries with backoff, raw responses, checkpoints and tokens kept out of code",
+            "outcomes": [
+              "Decide from a status code whether to retry, wait or stop",
+              "Explain why cursor pagination survives inserts that offset pagination does not",
+              "Build a rerunnable pull with raw responses, a checkpoint and idempotent writes"
+            ],
+            "lo": [
+              "LO3"
+            ],
+            "minutes": 155,
+            "lab": {
+              "id": "2.1",
+              "title": "Every record, exactly once",
+              "summary": "A client for the mock platform API that follows cursors, retries, keeps raw pages and resumes, then a polite public pull",
+              "minutes": 100,
+              "href": "../labs/D2_1_api_client.ipynb",
+              "steps": [
+                {
+                  "text": "Read the API’s terms; load the token from the environment",
+                  "minutes": 10
+                },
+                {
+                  "text": "Fetch one page by hand",
+                  "minutes": 10
+                },
+                {
+                  "text": "Write fetch_all: cursor, raw pages, checkpoint",
+                  "minutes": 25
+                },
+                {
+                  "text": "Add retries for 429 and 5xx; stop on other errors",
+                  "minutes": 20
+                },
+                {
+                  "text": "Interrupt, resume, prove exactly once",
+                  "minutes": 10
+                },
+                {
+                  "text": "Find what offset paging repeats and misses",
+                  "minutes": 10
+                },
+                {
+                  "text": "Read a public API’s licence, then pull every page politely",
+                  "minutes": 15
+                }
+              ],
+              "stretch": "Make the public pull resumable"
+            }
+          },
+          {
+            "n": 2,
+            "label": "Session 2",
+            "title": "Schema and validation",
+            "summary": "Nested JSON flattened to typed tables, declared types, ranges and keys, partitioned Parquet, and failing a load versus quarantining rows",
+            "outcomes": [
+              "Flatten nested records into one table per grain, keys carried down",
+              "Declare a schema and prove the written files match it",
+              "Decide per batch whether to load, quarantine rows or reject, and report why"
+            ],
+            "lo": [
+              "LO4",
+              "LO5"
+            ],
+            "minutes": 150,
+            "lab": {
+              "id": "2.2",
+              "title": "Flatten, write, validate",
+              "summary": "Raw API pages flattened to typed tables, written as day-partitioned Parquet, then five batches loaded, quarantined or rejected",
+              "minutes": 90,
+              "href": "../labs/D2_2_flatten_validate.ipynb",
+              "steps": [
+                {
+                  "text": "Check every raw record against the JSON Schema",
+                  "minutes": 15
+                },
+                {
+                  "text": "Flatten into sessions and readings tables",
+                  "minutes": 20
+                },
+                {
+                  "text": "Write day-partitioned Parquet with the declared schema; check it",
+                  "minutes": 15
+                },
+                {
+                  "text": "Declare the table checks with Pandera",
+                  "minutes": 15
+                },
+                {
+                  "text": "Validate five batches and write the report",
+                  "minutes": 20
+                },
+                {
+                  "text": "Read the quarantine file as its owner",
+                  "minutes": 5
+                }
+              ],
+              "stretch": "Add an optional field (schema version 2) without breaking version 1"
+            }
+          }
+        ]
+      },
+      {
+        "id": "capstone",
+        "kind": "capstone",
+        "n": 3,
+        "number": null,
+        "label": "Capstone",
+        "title": "Live ingestion run",
+        "subtitle": "Each participant runs the ingestion script live on a batch the assessor generates, then answers questions",
+        "shape": "",
+        "deck": "../slides/capstone.html",
+        "md": "../slides/capstone.md",
+        "url": "https://sdaiaacademy.github.io/fnd-dat-103/slides/capstone.html",
+        "sessions": []
+      }
+    ],
+    "capstone": {
+      "summary": "A checked ingestion script, run live on a batch the assessor supplies",
+      "submission": "An individual task, submitted as a public GitHub repository link within two weeks of the workshop: the ingestion script, its declared schemas, a README with its rules and how to run it, and the report of a run on the practice batch. No token, key or .env file in the repository. The live run uses a batch the assessor generates on the day from a seed of their choice.",
+      "talk_minutes": 6,
+      "qa_minutes": 5,
+      "rubric": [
+        {
+          "criterion": "Every input read correctly: encodings and times normalised to UTF-8 and UTC, each repair logged",
+          "weight": 20
+        },
+        {
+          "criterion": "Typed, partitioned output whose written schema matches the declared one",
+          "weight": 15
+        },
+        {
+          "criterion": "Record and table checks applied with stated rules: load, quarantine or reject",
+          "weight": 20
+        },
+        {
+          "criterion": "Rerunnable: a second run on the same batch gives the same files, the input kept untouched",
+          "weight": 10
+        },
+        {
+          "criterion": "A report and quarantine file the data owner can act on; no token in the repository",
+          "weight": 10
+        },
+        {
+          "criterion": "Live run: the assessor’s batch loaded or rejected for the correct reasons, and explained",
+          "weight": 25
+        }
+      ]
+    },
+    "labs": {
+      "kind": "notebooks",
+      "base": "labs/"
+    },
+    "tools": [
+      {
+        "slot": "Columnar file reading and writing",
+        "examples": [
+          "Apache Arrow with Parquet",
+          "DuckDB"
+        ]
+      },
+      {
+        "slot": "HTTP client",
+        "examples": [
+          "httpx",
+          "requests"
+        ]
+      },
+      {
+        "slot": "Schema validation",
+        "examples": [
+          "JSON Schema",
+          "Pandera"
+        ]
+      },
+      {
+        "slot": "Mock API",
+        "examples": [
+          "an Academy mock service in a container",
+          "a local FastAPI server"
+        ]
+      }
+    ],
+    "sources": [
+      {
+        "group": "National references",
+        "items": [
+          {
+            "title": "National Data Management Office: Open Data Policy (National Data Governance Policies, version 1, 5/5/2020)",
+            "url": "https://sdaia.gov.sa/en/SDAIA/about/Documents/OpenDataPolicy.pdf"
+          },
+          {
+            "title": "مكتب إدارة البيانات الوطنية: سياسة البيانات المفتوحة",
+            "url": "https://sdaia.gov.sa/ar/SDAIA/about/Documents/OpenDataPolicyAr.pdf"
+          },
+          {
+            "title": "SDAIA: Regulations and policies (index page)",
+            "url": "https://sdaia.gov.sa/en/SDAIA/about/Pages/RegulationsAndPolicies.aspx"
+          }
+        ]
+      },
+      {
+        "group": "Formats and standards",
+        "items": [
+          {
+            "title": "RFC 4180: Common Format and MIME Type for Comma-Separated Values (CSV) Files",
+            "url": "https://www.rfc-editor.org/rfc/rfc4180"
+          },
+          {
+            "title": "RFC 8259: The JavaScript Object Notation (JSON) Data Interchange Format",
+            "url": "https://www.rfc-editor.org/rfc/rfc8259"
+          },
+          {
+            "title": "JSON Lines",
+            "url": "https://jsonlines.org/"
+          },
+          {
+            "title": "RFC 3339: Date and Time on the Internet: Timestamps",
+            "url": "https://www.rfc-editor.org/rfc/rfc3339"
+          },
+          {
+            "title": "RFC 9110: HTTP Semantics (status codes, Retry-After)",
+            "url": "https://www.rfc-editor.org/rfc/rfc9110"
+          },
+          {
+            "title": "RFC 6585: Additional HTTP Status Codes (429 Too Many Requests)",
+            "url": "https://www.rfc-editor.org/rfc/rfc6585"
+          },
+          {
+            "title": "Apache Parquet: file format documentation",
+            "url": "https://parquet.apache.org/docs/file-format/"
+          },
+          {
+            "title": "Python documentation: zoneinfo, IANA time zone support (fold and ambiguous times)",
+            "url": "https://docs.python.org/3/library/zoneinfo.html"
+          },
+          {
+            "title": "Python documentation: codecs, standard encodings (cp1256, utf-8-sig, utf-16)",
+            "url": "https://docs.python.org/3/library/codecs.html#standard-encodings"
+          }
+        ]
+      },
+      {
+        "group": "Tools (examples of each slot)",
+        "items": [
+          {
+            "title": "Apache Arrow: Python documentation (pyarrow, datasets and partitioning)",
+            "url": "https://arrow.apache.org/docs/python/"
+          },
+          {
+            "title": "DuckDB: reading Parquet files",
+            "url": "https://duckdb.org/docs/stable/data/parquet/overview"
+          },
+          {
+            "title": "DuckDB: SQL on Apache Arrow (querying Arrow tables held in Python variables)",
+            "url": "https://duckdb.org/docs/stable/guides/python/sql_on_arrow"
+          },
+          {
+            "title": "HTTPX",
+            "url": "https://www.python-httpx.org/"
+          },
+          {
+            "title": "Requests",
+            "url": "https://requests.readthedocs.io/"
+          },
+          {
+            "title": "JSON Schema: specification (draft 2020-12)",
+            "url": "https://json-schema.org/specification"
+          },
+          {
+            "title": "Pandera documentation",
+            "url": "https://pandera.readthedocs.io/"
+          },
+          {
+            "title": "FastAPI: testing with TestClient",
+            "url": "https://fastapi.tiangolo.com/tutorial/testing/"
+          }
+        ]
+      },
+      {
+        "group": "The public open-data API of lab 2.1",
+        "items": [
+          {
+            "title": "World Bank: API basic call structures (page and per_page)",
+            "url": "https://datahelpdesk.worldbank.org/knowledgebase/articles/898581-api-basic-call-structures"
+          },
+          {
+            "title": "World Bank: terms of use for datasets (CC BY 4.0 unless labelled otherwise)",
+            "url": "https://www.worldbank.org/ext/en/legal/terms-conditions/datasets"
+          },
+          {
+            "title": "World Bank Data Catalog: public licenses",
+            "url": "https://datacatalog.worldbank.org/public-licenses"
+          }
+        ]
+      }
+    ]
+  }
+}

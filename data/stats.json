@@ -1,0 +1,518 @@
+{
+  "v": 1,
+  "engine": "1.0.0",
+  "build": {
+    "at": "2026-11-25T06:16:18Z",
+    "version": "2027.1.0",
+    "commit": "45af7a9"
+  },
+  "lang": "en",
+  "dir": "ltr",
+  "totals": {
+    "decks": 3,
+    "slides": 69,
+    "words": 4883,
+    "notes": 63,
+    "notes_ratio": 0.91,
+    "activities": 5,
+    "styles": 11,
+    "slide_minutes": null,
+    "components": {
+      "cards": 39,
+      "pills": 0,
+      "callouts": 18,
+      "tables": 9,
+      "code": 9,
+      "tokens": 0,
+      "flows": 5,
+      "stats": 4,
+      "bars": 2,
+      "meters": 0,
+      "agendas": 3,
+      "quizzes": 5,
+      "checklists": 4,
+      "prompts": 0,
+      "chats": 0,
+      "tools": 0,
+      "traces": 1,
+      "ladders": 0,
+      "figures": 0,
+      "matrices": 0,
+      "timers": 2,
+      "columns": 28,
+      "images": 0,
+      "drawings": 0,
+      "fragments": 0
+    },
+    "minutes": 600
+  },
+  "decks": [
+    {
+      "deck": "day1",
+      "kind": "day",
+      "label": "Day 1",
+      "title": "Files: formats, text and time",
+      "slides": 28,
+      "words": 2142,
+      "notes": 25,
+      "notes_ratio": 0.89,
+      "activities": 2,
+      "styles": 0,
+      "slide_minutes": null,
+      "components": {
+        "cards": 18,
+        "pills": 0,
+        "callouts": 9,
+        "tables": 5,
+        "code": 4,
+        "tokens": 0,
+        "flows": 2,
+        "stats": 0,
+        "bars": 0,
+        "meters": 0,
+        "agendas": 1,
+        "quizzes": 2,
+        "checklists": 2,
+        "prompts": 0,
+        "chats": 0,
+        "tools": 0,
+        "traces": 0,
+        "ladders": 0,
+        "figures": 0,
+        "matrices": 0,
+        "timers": 0,
+        "columns": 13,
+        "images": 0,
+        "drawings": 0,
+        "fragments": 0
+      },
+      "minutes": 295,
+      "sessions": [
+        {
+          "n": 1,
+          "label": "Session 1",
+          "title": "File formats",
+          "slides": 12,
+          "words": 970,
+          "notes": 11,
+          "notes_ratio": 0.92,
+          "activities": 1,
+          "styles": 0,
+          "slide_minutes": null,
+          "components": {
+            "cards": 9,
+            "pills": 0,
+            "callouts": 5,
+            "tables": 2,
+            "code": 3,
+            "tokens": 0,
+            "flows": 1,
+            "stats": 0,
+            "bars": 0,
+            "meters": 0,
+            "agendas": 0,
+            "quizzes": 1,
+            "checklists": 1,
+            "prompts": 0,
+            "chats": 0,
+            "tools": 0,
+            "traces": 0,
+            "ladders": 0,
+            "figures": 0,
+            "matrices": 0,
+            "timers": 0,
+            "columns": 6,
+            "images": 0,
+            "drawings": 0,
+            "fragments": 0
+          },
+          "minutes": 145,
+          "lab_minutes": 80
+        },
+        {
+          "n": 2,
+          "label": "Session 2",
+          "title": "Text and time",
+          "slides": 13,
+          "words": 997,
+          "notes": 12,
+          "notes_ratio": 0.92,
+          "activities": 1,
+          "styles": 0,
+          "slide_minutes": null,
+          "components": {
+            "cards": 8,
+            "pills": 0,
+            "callouts": 4,
+            "tables": 3,
+            "code": 1,
+            "tokens": 0,
+            "flows": 1,
+            "stats": 0,
+            "bars": 0,
+            "meters": 0,
+            "agendas": 0,
+            "quizzes": 1,
+            "checklists": 1,
+            "prompts": 0,
+            "chats": 0,
+            "tools": 0,
+            "traces": 0,
+            "ladders": 0,
+            "figures": 0,
+            "matrices": 0,
+            "timers": 0,
+            "columns": 6,
+            "images": 0,
+            "drawings": 0,
+            "fragments": 0
+          },
+          "minutes": 150,
+          "lab_minutes": 90
+        }
+      ]
+    },
+    {
+      "deck": "day2",
+      "kind": "day",
+      "label": "Day 2",
+      "title": "Interfaces and the boundary",
+      "slides": 31,
+      "words": 2231,
+      "notes": 28,
+      "notes_ratio": 0.9,
+      "activities": 3,
+      "styles": 5,
+      "slide_minutes": null,
+      "components": {
+        "cards": 14,
+        "pills": 0,
+        "callouts": 8,
+        "tables": 3,
+        "code": 5,
+        "tokens": 0,
+        "flows": 3,
+        "stats": 4,
+        "bars": 1,
+        "meters": 0,
+        "agendas": 1,
+        "quizzes": 3,
+        "checklists": 2,
+        "prompts": 0,
+        "chats": 0,
+        "tools": 0,
+        "traces": 1,
+        "ladders": 0,
+        "figures": 0,
+        "matrices": 0,
+        "timers": 0,
+        "columns": 12,
+        "images": 0,
+        "drawings": 0,
+        "fragments": 0
+      },
+      "minutes": 305,
+      "sessions": [
+        {
+          "n": 1,
+          "label": "Session 1",
+          "title": "Interfaces",
+          "slides": 13,
+          "words": 1031,
+          "notes": 12,
+          "notes_ratio": 0.92,
+          "activities": 1,
+          "styles": 5,
+          "slide_minutes": null,
+          "components": {
+            "cards": 7,
+            "pills": 0,
+            "callouts": 4,
+            "tables": 1,
+            "code": 1,
+            "tokens": 0,
+            "flows": 1,
+            "stats": 4,
+            "bars": 1,
+            "meters": 0,
+            "agendas": 0,
+            "quizzes": 1,
+            "checklists": 1,
+            "prompts": 0,
+            "chats": 0,
+            "tools": 0,
+            "traces": 1,
+            "ladders": 0,
+            "figures": 0,
+            "matrices": 0,
+            "timers": 0,
+            "columns": 7,
+            "images": 0,
+            "drawings": 0,
+            "fragments": 0
+          },
+          "minutes": 155,
+          "lab_minutes": 100
+        },
+        {
+          "n": 2,
+          "label": "Session 2",
+          "title": "Schema and validation",
+          "slides": 15,
+          "words": 1011,
+          "notes": 14,
+          "notes_ratio": 0.93,
+          "activities": 1,
+          "styles": 0,
+          "slide_minutes": null,
+          "components": {
+            "cards": 7,
+            "pills": 0,
+            "callouts": 3,
+            "tables": 2,
+            "code": 4,
+            "tokens": 0,
+            "flows": 2,
+            "stats": 0,
+            "bars": 0,
+            "meters": 0,
+            "agendas": 0,
+            "quizzes": 1,
+            "checklists": 1,
+            "prompts": 0,
+            "chats": 0,
+            "tools": 0,
+            "traces": 0,
+            "ladders": 0,
+            "figures": 0,
+            "matrices": 0,
+            "timers": 0,
+            "columns": 5,
+            "images": 0,
+            "drawings": 0,
+            "fragments": 0
+          },
+          "minutes": 150,
+          "lab_minutes": 90
+        }
+      ]
+    },
+    {
+      "deck": "capstone",
+      "kind": "capstone",
+      "label": "Capstone",
+      "title": "Live ingestion run",
+      "slides": 10,
+      "words": 510,
+      "notes": 10,
+      "notes_ratio": 1,
+      "activities": 0,
+      "styles": 6,
+      "slide_minutes": null,
+      "components": {
+        "cards": 7,
+        "pills": 0,
+        "callouts": 1,
+        "tables": 1,
+        "code": 0,
+        "tokens": 0,
+        "flows": 0,
+        "stats": 0,
+        "bars": 1,
+        "meters": 0,
+        "agendas": 1,
+        "quizzes": 0,
+        "checklists": 0,
+        "prompts": 0,
+        "chats": 0,
+        "tools": 0,
+        "traces": 0,
+        "ladders": 0,
+        "figures": 0,
+        "matrices": 0,
+        "timers": 2,
+        "columns": 3,
+        "images": 0,
+        "drawings": 0,
+        "fragments": 0
+      },
+      "minutes": null,
+      "sessions": []
+    }
+  ],
+  "coverage": [
+    {
+      "id": "LO1",
+      "text": "Compare delimited, JSON Lines and columnar files on size, read time and type fidelity, given one dataset in each format",
+      "level": "Awareness",
+      "slides": [
+        "day1#four-shapes",
+        "day1#format-promises",
+        "day1#csv-dialect",
+        "day1#json-lines",
+        "day1#columnar",
+        "day1#partitions",
+        "day1#arrow-interchange",
+        "day1#measure-fairly",
+        "day1#check-formats",
+        "day1#formats-debrief",
+        "day2#review-day1",
+        "day2#capstone-brief",
+        "capstone#the-task",
+        "capstone#rubric"
+      ],
+      "activities": [
+        "day1#check-formats-q1"
+      ],
+      "sessions": [
+        "day1/1"
+      ],
+      "labs": [
+        "1.1"
+      ],
+      "questions": [
+        "q-lo1-append-log",
+        "q-lo1-columns-read",
+        "q-lo1-timing-claim",
+        "q-lo1-partition-column"
+      ],
+      "covered": true
+    },
+    {
+      "id": "LO2",
+      "text": "Explain how encodings, byte order marks and time zones corrupt data, and identify each symptom, given six damaged files",
+      "level": "Awareness",
+      "slides": [
+        "day1#bytes-not-text",
+        "day1#legacy-code-pages",
+        "day1#byte-order-mark",
+        "day1#detect-then-confirm",
+        "day1#offsets-utc",
+        "day1#daylight-saving",
+        "day1#symptoms",
+        "day1#check-text-time",
+        "day1#text-time-debrief",
+        "day2#review-day1",
+        "day2#capstone-brief",
+        "capstone#the-task",
+        "capstone#rubric"
+      ],
+      "activities": [
+        "day1#check-text-time-q1",
+        "day2#review-day1-q1"
+      ],
+      "sessions": [
+        "day1/2"
+      ],
+      "labs": [
+        "1.2"
+      ],
+      "questions": [
+        "q-lo2-keyerror",
+        "q-lo2-cp1256-silent",
+        "q-lo2-zero-bytes",
+        "q-lo2-offset-changes",
+        "q-lo2-repeated-hour"
+      ],
+      "covered": true
+    },
+    {
+      "id": "LO3",
+      "text": "Implement an API client that follows cursor pagination, respects rate limits, retries with backoff and keeps raw responses, given a mock API with injected errors",
+      "level": "Applied",
+      "slides": [
+        "day2#http-in-one",
+        "day2#status-codes",
+        "day2#offset-vs-cursor",
+        "day2#backoff",
+        "day2#keep-raw",
+        "day2#rerunnable",
+        "day2#tokens-out",
+        "day2#terms-first",
+        "day2#open-data-policy",
+        "day2#check-retry",
+        "day2#api-debrief",
+        "day2#capstone-brief",
+        "capstone#the-task",
+        "capstone#rubric"
+      ],
+      "activities": [
+        "day2#check-retry-q1"
+      ],
+      "sessions": [
+        "day2/1"
+      ],
+      "labs": [
+        "2.1"
+      ],
+      "questions": [
+        "q-lo3-retry-401",
+        "q-lo3-retry-after",
+        "q-lo3-offset-inserts",
+        "q-lo3-idempotent",
+        "q-lo3-token"
+      ],
+      "covered": true
+    },
+    {
+      "id": "LO4",
+      "text": "Convert nested JSON into typed tables written as partitioned columnar files, given the raw responses",
+      "level": "Applied",
+      "slides": [
+        "day2#one-table-per-grain",
+        "day2#declared-schema",
+        "day2#check-written",
+        "day2#validate-debrief",
+        "day2#capstone-brief",
+        "capstone#the-task",
+        "capstone#rubric"
+      ],
+      "activities": [],
+      "sessions": [
+        "day2/2"
+      ],
+      "labs": [
+        "2.2"
+      ],
+      "questions": [
+        "q-lo4-grain",
+        "q-lo4-schema-proof",
+        "q-lo4-partition-in-path"
+      ],
+      "covered": true
+    },
+    {
+      "id": "LO5",
+      "text": "Implement validation checks that stop a load when a batch breaks the declared schema, given batches with seeded defects",
+      "level": "Applied",
+      "slides": [
+        "day2#two-layers",
+        "day2#json-schema-example",
+        "day2#pandera-example",
+        "day2#fail-or-quarantine",
+        "day2#owners-see",
+        "day2#check-quarantine",
+        "day2#validate-debrief",
+        "day2#capstone-brief",
+        "capstone#the-task",
+        "capstone#rubric"
+      ],
+      "activities": [
+        "day2#check-quarantine-q1"
+      ],
+      "sessions": [
+        "day2/2"
+      ],
+      "labs": [
+        "2.2"
+      ],
+      "questions": [
+        "q-lo5-renamed-field",
+        "q-lo5-quarantine-owner",
+        "q-lo5-clean-pass",
+        "q-lo5-table-rule"
+      ],
+      "covered": true
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+# Data Formats, Interfaces and Quality Checks
+
+> Move data between files, interfaces and tables without losing or corrupting it, and stop a bad batch at the boundary. SDAIA Academy course FND-DAT-103, version 2027.1.0, in English.
+
+Each slide is a heading such as "#### [day1#slide-id] Title": cite slides by that id, and each citation is a link (slides/day1.html#slide-id). These files are what a trainee sees: no speaker notes and no answer keys.
+
+## Course
+
+- [Course page](https://sdaiaacademy.github.io/fnd-dat-103/index.md): overview, outcomes, schedule and labs; the page itself is https://sdaiaacademy.github.io/fnd-dat-103/index.html
+- [The whole course](https://sdaiaacademy.github.io/fnd-dat-103/llms-full.txt): every unit, session and slide in one file, about 8,929 tokens
+- [Practice questions](https://sdaiaacademy.github.io/fnd-dat-103/practice.html): questions to check yourself, with feedback after each answer
+
+## Slides
+
+- [Day 1: Files: formats, text and time](https://sdaiaacademy.github.io/fnd-dat-103/slides/day1.md): What a file promises, what it loses, and how bytes and clocks corrupt data; sessions: File formats, Text and time; page: https://sdaiaacademy.github.io/fnd-dat-103/slides/day1.html; about 3,614 tokens
+- [Day 2: Interfaces and the boundary](https://sdaiaacademy.github.io/fnd-dat-103/slides/day2.md): Pull every record exactly once, then let only a valid batch through; sessions: Interfaces, Schema and validation; page: https://sdaiaacademy.github.io/fnd-dat-103/slides/day2.html; about 3,929 tokens
+- [Capstone: Live ingestion run](https://sdaiaacademy.github.io/fnd-dat-103/slides/capstone.md): Each participant runs the ingestion script live on a batch the assessor generates, then answers questions; page: https://sdaiaacademy.github.io/fnd-dat-103/slides/capstone.html; about 1,003 tokens
+
+## Labs
+
+- [Lab 1.1: One dataset, three formats](https://sdaiaacademy.github.io/fnd-dat-103/labs/D1_1_three_formats.ipynb): Day 1, Session 1, 80 min
+- [Lab 1.2: Six damaged files](https://sdaiaacademy.github.io/fnd-dat-103/labs/D1_2_damaged_files.ipynb): Day 1, Session 2, 90 min
+- [Lab 2.1: Every record, exactly once](https://sdaiaacademy.github.io/fnd-dat-103/labs/D2_1_api_client.ipynb): Day 2, Session 1, 100 min
+- [Lab 2.2: Flatten, write, validate](https://sdaiaacademy.github.io/fnd-dat-103/labs/D2_2_flatten_validate.ipynb): Day 2, Session 2, 90 min
+
+## Context files
+
+- [context/course.md](https://sdaiaacademy.github.io/fnd-dat-103/context/course.md): the whole course, for an assistant that takes a file, about 8,929 tokens
+- [context/day1.md](https://sdaiaacademy.github.io/fnd-dat-103/context/day1.md): Day 1, about 3,614 tokens
+- [context/day2.md](https://sdaiaacademy.github.io/fnd-dat-103/context/day2.md): Day 2, about 3,929 tokens
+- [context/capstone.md](https://sdaiaacademy.github.io/fnd-dat-103/context/capstone.md): Capstone, about 1,003 tokens
