@@ -1,5 +1,5 @@
 <section class="slide title" id="title" data-auto="title">
-  <aside class="notes"><p>The capstone session, after the tracked follow-up task: groups of eight, 120 minutes. Before it, check that each participant's public repository link opens and holds the script, its schemas, a README and the report of a practice run, and that no token, key or .env file is in it. Generate one unseen batch per participant with labs/capstone/make_batch.py and a seed of your own; keep the keys on your machine.</p></aside>
+  <aside class="notes"><p>The capstone session, after the tracked follow-up task: groups of eight, 120 minutes. Before it, check that each participant's public repository link opens and holds the script, its schemas, a README and the report of a practice run, and that no token, key or .env file is in it. Generate one unseen batch per participant with labs/capstone/make_batch.py, a seed of your own and a letter (--label); keep the seeds and keys on your machine.</p></aside>
 </section>
 
 <section class="slide" data-label="Agenda" id="agenda">
@@ -52,29 +52,29 @@
     <div class="card c-cyan"><h4>5 min · questions</h4><p class="small mb0">The assessor asks about one decision, one repair and one rule, from the key in front of them.</p></div>
     <div class="card c-coral"><h4>2 min · changeover</h4><p class="small mb0">The next participant shares their screen and opens a terminal.</p></div>
   </div>
-  <aside class="notes"><p>The assessor generates the batch, not the participant: that is the separation between who builds and who checks. Compare the report with the key: decision, defects, the register's encoding and the vendor log's UTC times. The trainer's reference script, labs/solutions/capstone_ingest.py, matches the key on every seed tried while building the course (seeds 1 to 12, 42, 77 and 100).</p></aside>
+  <aside class="notes"><p>The assessor generates the batch, not the participant: that is the separation between who builds and who checks. Compare the report with the key: decision, defects, the register's encoding and the vendor log's UTC times. The trainer's reference script, labs/solutions/capstone_ingest.py, matches the key on every seed tried while building the course (seeds 1 to 16, 42, 77 and 100).</p></aside>
 </section>
 
 <section class="slide order" data-label="Running order" id="running-order">
   <div class="kicker">Running order</div>
   <h2>Who runs when, on which batch</h2>
   <table class="t small">
-    <tr><th>#</th><th>Participant</th><th>Repository</th><th>Batch seed</th></tr>
-    <tr><td>1</td><td><input placeholder="Name"></td><td><input placeholder="Repository"></td><td><input placeholder="Seed"></td></tr>
-    <tr><td>2</td><td><input placeholder="Name"></td><td><input placeholder="Repository"></td><td><input placeholder="Seed"></td></tr>
-    <tr><td>3</td><td><input placeholder="Name"></td><td><input placeholder="Repository"></td><td><input placeholder="Seed"></td></tr>
-    <tr><td>4</td><td><input placeholder="Name"></td><td><input placeholder="Repository"></td><td><input placeholder="Seed"></td></tr>
-    <tr><td>5</td><td><input placeholder="Name"></td><td><input placeholder="Repository"></td><td><input placeholder="Seed"></td></tr>
-    <tr><td>6</td><td><input placeholder="Name"></td><td><input placeholder="Repository"></td><td><input placeholder="Seed"></td></tr>
-    <tr><td>7</td><td><input placeholder="Name"></td><td><input placeholder="Repository"></td><td><input placeholder="Seed"></td></tr>
-    <tr><td>8</td><td><input placeholder="Name"></td><td><input placeholder="Repository"></td><td><input placeholder="Seed"></td></tr>
+    <tr><th>#</th><th>Participant</th><th>Repository</th><th>Batch</th></tr>
+    <tr><td>1</td><td><input placeholder="Name"></td><td><input placeholder="Repository"></td><td><input placeholder="Letter"></td></tr>
+    <tr><td>2</td><td><input placeholder="Name"></td><td><input placeholder="Repository"></td><td><input placeholder="Letter"></td></tr>
+    <tr><td>3</td><td><input placeholder="Name"></td><td><input placeholder="Repository"></td><td><input placeholder="Letter"></td></tr>
+    <tr><td>4</td><td><input placeholder="Name"></td><td><input placeholder="Repository"></td><td><input placeholder="Letter"></td></tr>
+    <tr><td>5</td><td><input placeholder="Name"></td><td><input placeholder="Repository"></td><td><input placeholder="Letter"></td></tr>
+    <tr><td>6</td><td><input placeholder="Name"></td><td><input placeholder="Repository"></td><td><input placeholder="Letter"></td></tr>
+    <tr><td>7</td><td><input placeholder="Name"></td><td><input placeholder="Repository"></td><td><input placeholder="Letter"></td></tr>
+    <tr><td>8</td><td><input placeholder="Name"></td><td><input placeholder="Repository"></td><td><input placeholder="Letter"></td></tr>
   </table>
-  <aside class="notes"><p>Fill before the session. Mix the seeds so the group sees every kind of batch: a clean one, one with a few defects, a changed field, and one with too many defects (the scenario follows the seed's remainder by four; the key names it). Thirteen minutes per slot.</p></aside>
+  <aside class="notes"><p>Fill before the session. Mix the batches so the group sees every kind: a clean one, one with a few defects, a changed field, and one with too many defects. Each key names its scenario; draw another seed if a kind is missing. Write the letter here, never the seed. Thirteen minutes per slot.</p></aside>
 </section>
 
 <section class="slide dark presenting" data-label="Now presenting" id="now-presenting">
   <div class="kicker center">Now running</div>
-  <div class="center"><input placeholder="Name and batch seed"></div>
+  <div class="center"><input placeholder="Name and batch letter"></div>
   <div class="timers mt">
     <div><h3>Live run</h3><div class="timer" data-minutes="6"></div></div>
     <div><h3>Questions</h3><div class="timer" data-minutes="5"></div></div>

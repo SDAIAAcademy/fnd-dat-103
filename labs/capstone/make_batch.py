@@ -7,17 +7,22 @@
 The assessor runs it on the day with a seed of their own choice, gives the participant the batch
 folder and keeps the key. From labs/:
 
-    uv run python capstone/make_batch.py --seed 1 --out capstone/practice --key capstone/practice_key.json
+    uv run python capstone/make_batch.py --seed 1 --label P --out capstone/practice --key capstone/practice_key.json
+
+The seed is the assessor's secret: the scenario, the encoding and the ids are all drawn from it at
+random, so nothing in the batch reveals it. Hand the batch over by its letter (--label), not by
+the seed. Every kind of batch comes up across a few seeds; read the scenario in each key and draw
+another seed if the group lacks one.
 
 The batch folder holds three files:
 
-  stations.csv              the station register; its encoding depends on the seed (UTF-8 with a
+  stations.csv              the station register; its encoding is drawn at random (UTF-8 with a
                             byte order mark, or the legacy Arabic code page cp1256)
-  sessions.jsonl            nested session records as the platform API returns them; the seed
-                            decides how many and which defects (none, a few, a changed field,
+  sessions.jsonl            nested session records as the platform API returns them; how many and
+                            which defects are drawn at random (none, a few, a changed field,
                             or too many)
   vendor_b_sessions.csv     a charger log with local CET times and no offset, around a clock
-                            change on some seeds
+                            change in most batches
 
 The key holds the expected decision for sessions.jsonl, every seeded defect, the register's
 encoding and the expected UTC times of the vendor log.
@@ -44,17 +49,21 @@ SCENARIOS = ["clean", "few_defects", "schema_break", "too_many"]
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--seed", type=int, required=True)
+    ap.add_argument("--label", default="A", help="the letter the batch is handed over by")
     ap.add_argument("--out", required=True)
     ap.add_argument("--key", required=True, help="where to write the key; keep it away from the participant")
     a = ap.parse_args()
     rng = random.Random(a.seed)
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
-    scenario = SCENARIOS[a.seed % 4]
-    key: dict = {"seed": a.seed, "scenario": scenario}
+    scenario = rng.choice(SCENARIOS)
+    enc = rng.choice(["cp1256", "utf-8-sig"])
+    around_change = rng.random() < 2 / 3
+    id_block = rng.randrange(30)
+    vendor_tag = rng.randrange(10, 100)
+    key: dict = {"label": a.label, "seed": a.seed, "scenario": scenario}
 
     # the register, in one of two encodings
-    enc = "cp1256" if a.seed % 2 else "utf-8-sig"
     buf = io.StringIO()
     w = csv.writer(buf, lineterminator="\r\n" if enc == "cp1256" else "\n")
     w.writerow(["station_id", "name_ar", "sector", "connectors"])
@@ -65,7 +74,7 @@ def main() -> None:
 
     # the sessions, with defects by scenario
     n = 300
-    recs = U.make_api_records(n, seed=9000 + a.seed, first_id=60001 + (a.seed % 30) * 1000)
+    recs = U.make_api_records(n, seed=9000 + a.seed, first_id=60001 + id_block * 1000)
     defects: list[list[str]] = []
     idx = rng.sample(range(n), 40)
     if scenario == "few_defects":
@@ -91,7 +100,6 @@ def main() -> None:
 
     # the vendor log: local CET times, no offset, seq in start order
     cet = ZoneInfo(U.VENDOR_B_ZONE)
-    around_change = a.seed % 3 != 0
     base = datetime(2026, 10, 24, 12, tzinfo=UTC) if around_change else datetime(2026, 11, 3, 6, tzinfo=UTC)
     starts = sorted(base + timedelta(minutes=rng.randrange(0, 30 * 60)) for _ in range(24))
     if around_change:
@@ -100,7 +108,7 @@ def main() -> None:
     rows, expected = [], {}
     for k, st in enumerate(starts, 1):
         en = st + timedelta(minutes=rng.randint(10, 50))
-        sid = f"CS-V{a.seed % 100:02d}{k:02d}"
+        sid = f"CS-V{vendor_tag:02d}{k:02d}"
         rows.append([k, sid, f"ST{rng.randint(29, 40)}", st.astimezone(cet).strftime("%Y-%m-%d %H:%M"), en.astimezone(cet).strftime("%Y-%m-%d %H:%M")])
         expected[sid] = [st.strftime("%Y-%m-%dT%H:%M:%SZ"), en.strftime("%Y-%m-%dT%H:%M:%SZ")]
     buf = io.StringIO()
@@ -111,7 +119,7 @@ def main() -> None:
     key["vendor_b"] = {"rows": len(rows), "crosses_clock_change": around_change, "utc": expected}
 
     Path(a.key).write_text(json.dumps(key, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
-    print(f"batch written to {out.name}/ (scenario kept in the key)")
+    print(f"batch {a.label} written to {out.name}/ (scenario kept in the key)")
 
 
 if __name__ == "__main__":

@@ -92,6 +92,8 @@ quarantined rows.
 
 ## Capstone
 
-`labs/capstone/make_batch.py --seed <n>` writes a batch folder and, separately, its key. The
-practice batch (seed 1) is in `labs/capstone/practice/`. The assessor chooses another seed on the
-day and keeps the key.
+`labs/capstone/make_batch.py --seed <n> --label <letter>` writes a batch folder and, separately,
+its key. The seed draws the scenario, the encoding and the ids at random, so the batch does not
+reveal it; the key names the scenario. The practice batch P (seed 1) is in
+`labs/capstone/practice/`. The assessor chooses other seeds on the day, keeps them and the keys,
+and hands batches over by letter.

@@ -30,10 +30,11 @@ tracked follow-up task): the script, the declared schemas, a README that states 
 how to run the script, and the report of a run on the practice batch. No token, key or `.env`
 file in the repository.
 
-**Practice.** `practice/` is the batch of seed 1 and `practice_key.json` its key. Generate more
+**Practice.** `practice/` is practice batch P and `practice_key.json` its key. Generate more
 with `uv run python capstone/make_batch.py --seed <n> --out <folder> --key <file>` (from `labs/`)
-and check your script against their keys. On the day the assessor picks a seed you have not seen
-and keeps its key.
+and check your script against their keys. Each seed draws the kind of batch, the encoding and the
+ids at random. On the day the assessor generates your batch from a seed of their own, hands it
+over by its letter and keeps its key.
 
 **AI policy: AI-full.** Use any assistant to write and test the script. In the live run you
 explain every decision it makes; "the assistant wrote it" is not an explanation.
